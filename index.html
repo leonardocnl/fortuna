@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fortuna - Simulador de Investimentos Avançado</title>
+    <meta name="description" content="Simule seus investimentos com diferentes ativos e alocações. Visualize o crescimento do patrimônio e estime quando atingir suas metas financeiras com o Simulador Fortuna.">
+    <meta property="og:title" content="Fortuna - Simulador de Investimentos Avançado">
+    <meta property="og:description" content="Simule seus investimentos, visualize o crescimento do patrimônio e planeje seu futuro financeiro com o Fortuna.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="[URL_COMPLETA_DA_SUA_PAGINA_AQUI]">
+    <meta property="og:image" content="[URL_COMPLETA_DA_IMAGEM_PREVIEW_AQUI]">
+    <meta property="og:locale" content="pt_BR">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Fortuna - Simulador de Investimentos Avançado">
+    <meta name="twitter:description" content="Simule seus investimentos, visualize o crescimento do patrimônio e planeje seu futuro financeiro com o Fortuna.">
+    <meta name="twitter:image" content="[URL_COMPLETA_DA_IMAGEM_PREVIEW_AQUI]">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" integrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "Fortuna - Simulador de Investimentos Avançado",
+      "description": "Simulador online para projeção de investimentos de longo prazo com diferentes cenários de aportes e carteiras de ativos.",
+      "applicationCategory": "FinanceApplication",
+      "operatingSystem": "Web",
+      "browserRequirements": "Requires JavaScript and CSS.",
+      "url": "[URL_COMPLETA_DA_SUA_PAGINA_AQUI]",
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "BRL" }
+    }
+    </script>
+</head>
+<body>
+    <header class="site-header">
+        <div class="container header-content">
+            <h1><i class="fas fa-rocket"></i> Fortuna</h1>
+            <p class="tagline">Projete seus investimentos e alcance seus objetivos financeiros</p>
+        </div>
+    </header>
+
+    <div id="message-container"></div>
+
+    <div class="layout-container container">
+        <main class="main-content" role="main">
+
+            <section id="sobre-ferramenta" class="about-section-styled" style="margin-bottom: 2rem;">
+                    <h2><i class="fas fa-info-circle"></i> Sobre o Simulador Fortuna</h2>
+                    <div class="sobre-conteudo">
+                        <h3>Desvende o Futuro dos Seus Investimentos com o Fortuna!</h3>
+                        <p>Sonha em ver seu patrimônio crescer...? (Conteúdo completo mantido)</p>
+                        <hr class="section-divider">
+                        <h4>Como funciona? É simples:</h4>
+                        <ol class="styled-list ordered">
+                            <li>Defina se quer simular por um período ou até atingir uma meta.</li>
+                            <li>Informe o aporte inicial (se houver) e o aporte mensal.</li>
+                            <li>Informe a inflação anual estimada (opcional, padrão 0%).</li>
+                            <li>Decida se o aporte mensal deve ser corrigido pela inflação.</li>
+                            <li>Escolha a estratégia de reinvestimento (Rebalancear ou Prioridade).</li>
+                            <li>Adicione os ativos: preço, dividendo mensal e % de alocação do aporte.</li>
+                            <li>Defina a ordem de prioridade para reinvestimento arrastando os ativos na lista dedicada.</li>
+                            <li>(Opcional) Informe seu custo de vida desejado para viver de renda.</li>
+                        </ol>
+                        <hr class="section-divider">
+                        <h4>Use o Fortuna para:</h4>
+                         <ul class="styled-list bulleted">
+                            <li><i class="fas fa-chart-line list-icon"></i> Visualizar o crescimento nominal e real do seu patrimônio.</li>
+                            <li><i class="fas fa-calculator list-icon"></i> Entender o impacto da inflação, aportes e reinvestimentos.</li>
+                            <li><i class="fas fa-bullseye list-icon"></i> Estimar o tempo para alcançar sua meta (corrigida pela inflação).</li>
+                            <li><i class="fas fa-home list-icon"></i> Projetar quando poderá viver de renda (considerando a inflação no custo de vida).</li>
+                        </ul>
+                        <hr class="section-divider">
+                        <p>Experimente diferentes cenários...</p>
+                        <div class="disclaimer-box">
+                            <p><small><strong>Importante:</strong> Ferramenta educacional...</small></p>
+                        </div>
+                        <p class="final-cta"><strong>Comece a simular agora!</strong></p>
+                    </div>
+            </section>
+
+            <section id="simulador" class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-calculator"></i> Simulador</h2>
+                    <p class="section-description">Insira os dados para projetar o crescimento do seu patrimônio.</p>
+                </div>
+                <div class="card-body">
+                    <div class="form-grid">
+
+                        <div class="input-group">
+                            <label for="tipo-simulacao"><i class="fas fa-exchange-alt"></i> Tipo de Simulação</label>
+                            <select id="tipo-simulacao" name="tipo-simulacao">
+                                <option value="periodo" selected>Simular por Período</option>
+                                <option value="meta-patrimonio">Atingir Meta de Patrimônio</option>
+                            </select>
+                        </div>
+
+                        <div class="input-group">
+                             <label for="aporte-inicial"><i class="fas fa-coins"></i> Aporte Inicial (R$):</label>
+                             <input type="text" id="aporte-inicial" inputmode="numeric" placeholder="0,00">
+                        </div>
+
+                        <div class="input-group">
+                             <label for="aporte-mensal"><i class="fas fa-wallet"></i> Aporte Mensal (R$):</label>
+                             <input type="text" id="aporte-mensal" inputmode="numeric" placeholder="Ex: 1000,00" required>
+                        </div>
+
+                        <div class="input-group checkbox-group">
+                             <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                 <input type="checkbox" id="corrigir-aporte-inflacao" name="corrigir-aporte-inflacao" value="true" style="width: auto;">
+                                 <label for="corrigir-aporte-inflacao" style="margin-bottom: 0;">
+                                     Corrigir Aporte Mensal pela Inflação?
+                                 </label>
+                             </div>
+                             <small class="input-help" style="margin-left: calc(1.1em + 0.4rem + 0.5rem);">Se marcado, o aporte mensal aumenta com a inflação estimada abaixo.</small>
+                        </div>
+
+                        <div class="input-group">
+                             <label for="inflacao-anual"><i class="fas fa-chart-line"></i> Inflação Anual Estimada (%):</label>
+                             <input type="text" id="inflacao-anual" name="inflacao-anual" inputmode="numeric" placeholder="0,00">
+                             <small class="input-help">Opcional (padrão 0%). Corrige metas e resultados para poder de compra.</small>
+                        </div>
+
+                        <div class="input-group">
+                             <label for="estrategia-reinvestimento"><i class="fas fa-random"></i> Estratégia de Reinvestimento:</label>
+                             <select id="estrategia-reinvestimento" name="estrategia-reinvestimento">
+                                 <option value="rebalancear" selected>Rebalancear Carteira (Padrão)</option>
+                                 <option value="prioridade">Seguir Prioridade Definida (Ordem Abaixo)</option>
+                             </select>
+                             <small class="input-help">Como o dinheiro extra (sobras, dividendos) será reinvestido.</small>
+                        </div>
+
+
+                        <div class="input-group" id="meta-patrimonio-container" style="display: none;">
+                             <label for="meta-patrimonio"><i class="fas fa-bullseye"></i> Meta de Patrimônio Total (R$) (Valor de Hoje)</label>
+                             <input type="text" id="meta-patrimonio" inputmode="numeric" placeholder="Ex: 1000000,00">
+                             <small class="input-help">Este valor será corrigido pela inflação durante a simulação.</small>
+                        </div>
+
+                        <div class="input-group" id="periodo-container">
+                             <label for="periodo-valor"><i class="fas fa-calendar-alt"></i> Período da Simulação</label>
+                             <div class="periodo-container">
+                                 <input type="number" id="periodo-valor" name="periodo-valor" placeholder="Ex: 10" min="1" step="1" required>
+                                 <select id="periodo-tipo" name="periodo-tipo">
+                                     <option value="anos" selected>Anos</option>
+                                     <option value="meses">Meses</option>
+                                 </select>
+                             </div>
+                        </div>
+
+                        <div class="input-group" id="custo-vida-container">
+                             <label for="custo-vida"><i class="fas fa-home"></i> Custo de Vida Mensal Desejado (R$) (Valor de Hoje)</label>
+                             <input type="text" id="custo-vida" inputmode="numeric" placeholder="Ex: 3000,00">
+                             <small class="input-help">Opcional. Será corrigido pela inflação para estimar quando viver de renda.</small>
+                        </div>
+
+                    </div>
+
+                    <div class="ativos-section" style="margin-top: 2rem; border-top: 1px solid #eee; padding-top: 1.5rem;">
+                        <h3><i class="fas fa-chart-pie"></i> Ativos da Carteira</h3>
+                        <p class="section-description">Adicione os ativos e defina a alocação do aporte (total 100%).</p>
+                        <div id="ativos-list" class="ativos-list-container" style="margin-bottom: 1rem;">
+                             <div class="lista-vazia-placeholder" style="display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 1rem; background-color: #f9f9f9; border-radius: 4px;">
+                                 <i class="fas fa-folder-open fa-2x" style="margin-bottom: 0.5rem; color: #aaa;"></i>
+                                 <p style="color: #777;">Nenhum ativo adicionado ainda.</p>
+                             </div>
+                        </div>
+                        <div style="text-align: right; margin-bottom: 0.5rem; font-size: 0.9rem;">
+                            <strong>Total Alocado: <span id="total-alocado">0.00</span>%</strong>
+                            <span id="alocacao-feedback" style="margin-left: 10px; font-weight: bold;"></span>
+                        </div>
+                        <button type="button" id="abrir-modal" class="btn btn-secondary btn-full-width">
+                            <i class="fas fa-plus"></i> Adicionar/Modificar Ativo
+                        </button>
+
+                        <div id="priority-reorder-section" style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid #eee;">
+                             <h4><i class="fas fa-sort"></i> Prioridade de Reinvestimento (Arraste para Ordenar)</h4>
+                             <p class="section-description" style="font-size:0.85rem; margin-bottom: 0.8rem;">
+                                 Defina a ordem em que o dinheiro extra será reinvestido na estratégia 'Seguir Prioridade'. O primeiro da lista tem prioridade 1.
+                             </p>
+                             <ul id="priority-sort-list" class="priority-list" style="list-style: none; padding: 0; border: 1px dashed #ccc; border-radius: 4px; min-height: 50px; background-color: #fafafa;">
+                                 <li class="priority-placeholder" style="text-align: center; color: #888; padding: 1rem; font-style: italic;">Adicione ativos para definir a prioridade.</li>
+                             </ul>
+                             <small class="input-help" style="margin-top: 0.5rem;">Clique e arraste os ativos acima para reordenar a prioridade.</small>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 2rem; text-align: center;">
+                         <button type="button" id="simular-btn" class="btn btn-primary btn-large">
+                             <i class="fas fa-play-circle"></i> Simular Resultados
+                         </button>
+                    </div>
+                </div>
+            </section>
+
+            <section id="resultados" class="card" style="margin-top: 2rem;">
+                 <div class="card-header"><h2><i class="fas fa-poll"></i> Resultados da Simulação</h2></div>
+                 <div id="resultado-simulacao" class="result-placeholder card-body" style="min-height: 150px; display: flex; align-items: center; justify-content: center;">
+                     <div>
+                         <i class="fas fa-info-circle fa-2x" style="color: #aaa; margin-bottom: 1rem; display: block;"></i>
+                         <p>Preencha os dados, adicione ativos e clique em "Simular".</p>
+                     </div>
+                 </div>
+            </section>
+
+            <section id="graficos" class="card" style="display: none; margin-top: 2rem;">
+                 <div class="card-header"><h2><i class="fas fa-chart-bar"></i> Visualização Gráfica</h2><small id="graficos-cenario-info" class="section-description" style="margin-left: auto;"></small></div>
+                 <div class="card-body">
+                     <div class="grafico-wrapper" style="margin-bottom: 2rem;"><h3><i class="fas fa-chart-line"></i> Evolução Patrimônio Total x Total Aportado</h3><div class="canvas-container"> <canvas id="grafico-evolucao"></canvas> </div></div>
+                     <div class="grafico-wrapper"><h3><i class="fas fa-money-bill-wave"></i> Evolução dos Dividendos Mensais</h3><div class="canvas-container"> <canvas id="grafico-dividendos"></canvas> </div></div>
+                     <div class="grafico-wrapper"><h3><i class="fas fa-chart-pie"></i> Composição Final da Carteira (Valor)</h3><div class="canvas-container"> <canvas id="grafico-carteira"></canvas> </div></div>
+                 </div>
+            </section>
+
+            <section id="tabela-detalhada" class="card" style="display: none; margin-top: 2rem;">
+                 <div class="card-header"><h2><i class="fas fa-table"></i> Detalhamento Mês a Mês</h2><button id="export-csv-btn" class="btn btn-secondary btn-sm" style="margin-left: auto;" title="Exportar dados da tabela para CSV"><i class="fas fa-file-csv"></i> Exportar CSV</button></div>
+                 <div class="card-body" style="padding: 0;">
+                     <div class="table-container">
+                         <table id="simulation-table" class="data-table">
+                             <thead>
+                                 <tr>
+                                     <th>Mês</th>
+                                     <th>Aporte</th>
+                                     <th>Dividendos</th>
+                                     <th>Patrimônio Investido</th>
+                                     <th>Patrimônio Total</th>
+                                     <th>Patrimônio Total (Real)</th>
+                                 </tr>
+                             </thead>
+                             <tbody>
+                                 <tr class="placeholder-row"><td colspan="6" style="text-align: center; padding: 1rem;">Os detalhes aparecerão aqui.</td></tr>
+                             </tbody>
+                         </table>
+                     </div>
+                 </div>
+            </section>
+
+        </main>
+
+        <aside class="sidebar-ads" role="complementary">
+             <div class="ad-placeholder card"><div class="card-body"><h4>Publicidade</h4><p>Espaço</p></div></div>
+             <div class="ad-placeholder card"><div class="card-body"><h4>Publicidade</h4><p>Espaço</p></div></div>
+        </aside>
+
+    </div>
+
+    <div id="modal-ativo" class="modal">
+        <div class="modal-content card">
+            <div class="card-header modal-header">
+                 <h3 id="modal-titulo"><i class="fas fa-plus-circle"></i> Adicionar/Editar Ativo</h3>
+                 <button class="fechar-modal" title="Fechar"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="card-body" style="padding: 1.5rem;">
+                 <form id="form-ativo">
+                     <input type="hidden" id="ativo-index" value="-1">
+
+                     <fieldset class="form-fieldset">
+                         <legend class="fieldset-legend">Identificação</legend>
+                         <div class="input-group">
+                             <label for="ativo-nome"><i class="fas fa-tag"></i> Nome / Ticker:</label>
+                             <input type="text" id="ativo-nome" name="ativo-nome" required placeholder="Ex: ITSA4, MXRF11">
+                         </div>
+                     </fieldset>
+
+                     <hr class="form-divider">
+
+                     <fieldset class="form-fieldset">
+                         <legend class="fieldset-legend">Características do Ativo</legend>
+                         <div class="form-row">
+                             <div class="input-group">
+                                 <label for="ativo-preco"><i class="fas fa-dollar-sign"></i> Preço Unitário (R$):</label>
+                                 <input type="text" inputmode="numeric" id="ativo-preco" name="ativo-preco" placeholder="Ex: 10,50" required>
+                             </div>
+                             <div class="input-group">
+                                 <label for="ativo-dividendos"><i class="fas fa-hand-holding-usd"></i> Dividendo Mensal / Cota (R$):</label>
+                                 <input type="text" inputmode="numeric" id="ativo-dividendos" name="ativo-dividendos" required placeholder="Ex: 0,11">
+                                 <small class="input-help">Último rendimento ou estimativa mensal.</small>
+                             </div>
+                         </div>
+                     </fieldset>
+
+                     <hr class="form-divider">
+
+                     <fieldset class="form-fieldset">
+                         <legend class="fieldset-legend">Estratégia na Simulação</legend>
+                         <div class="input-group">
+                             <label for="ativo-alocacao"><i class="fas fa-percentage"></i> Alocação do Aporte (%):</label>
+                             <input type="text" inputmode="numeric" id="ativo-alocacao" name="ativo-alocacao" placeholder="Ex: 25,00" required>
+                              <small class="input-help">Quanto do aporte mensal vai para este ativo. Total deve ser 100%.</small>
+                         </div>
+                     </fieldset>
+
+                     <div class="modal-actions">
+                         <button type="button" class="btn btn-secondary fechar-modal">Cancelar</button>
+                         <button type="submit" id="modal-botao" class="btn btn-primary"></button>
+                     </div>
+                 </form>
+            </div>
+        </div>
+    </div>
+
+    <footer class="site-footer" role="contentinfo">
+        <div class="container footer-content">
+            <p>&copy; <span id="current-year"></span> Fortuna Simulações. Todos os direitos reservados.</p>
+            <div class="footer-links">
+                <a href="#simulador" class="footer-link">Simulador</a>
+                <a href="#" class="footer-link">Termos</a>
+                <a href="#" class="footer-link">Privacidade</a>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <script src="https://unpkg.com/imask"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+    <script src="script.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('current-year').textContent = new Date().getFullYear();
+              document.getElementById('export-csv-btn')?.addEventListener('click', () => {
+                  if (typeof exportTableToCSV === 'function') { exportTableToCSV('simulation-table'); }
+                  else { alert('Erro: Função de exportação não encontrada.'); console.error('Função exportTableToCSV não definida.'); }
+              });
+        });
+    </script>
+
+</body>
+</html>
