@@ -459,15 +459,48 @@ function calcularInvestimentoInicial(aporteInicial, ativosProcessadosPrioridade,
     };
 }
 
+function _deveContinuarSimulacao(mes, patrimonioInvestido, dinheiroOcioso, tipoSimulacao, params) {
+    const { periodoMeses, metaPatrimonio, annualInflationRate } = params;
+
+    if (mes >= MAX_MESES_SIMULACAO) {
+        return false;
+    }
+
+    if (tipoSimulacao === 'periodo') {
+        return mes < periodoMeses;
+    } else if (tipoSimulacao === 'meta-patrimonio') {
+        const anosCompletos = Math.floor(mes / 12);
+        const fatorInflacao = Math.pow(1 + annualInflationRate, anosCompletos);
+        const metaCorrigida = arredondarParaMoeda(metaPatrimonio * fatorInflacao);
+        const patrimonioTotalAtual = arredondarParaMoeda(patrimonioInvestido + dinheiroOcioso);
+        return patrimonioTotalAtual < metaCorrigida;
+    }
+    return false;
+}
+
+function _registrarDadosDoMesNoHistorico(historico, mes, resultadoMes, aporteDoMes, totalAportadoAcumulado) {
+    historico.mesesLabels.push(mes);
+    historico.patrimonioInvestidoHist.push(resultadoMes.patrimonioInvestidoMes);
+    historico.totalAportadoHist.push(totalAportadoAcumulado);
+    historico.dividendosHist.push(resultadoMes.dividendosMes);
+    historico.investidoMesHist.push(resultadoMes.investidoMes);
+    historico.ociosoHist.push(resultadoMes.dinheiroOciosoFinal);
+    historico.aporteMesHist.push(aporteDoMes);
+}
+
 function executarCicloSimulacao(params) {
     const { aporteInicial, aporteMensal, tipoSimulacao, periodoMeses, metaPatrimonio,
             custoVida, estrategiaReinvestimento, annualInflationRate,
             corrigirAporteInflacao, ativosProcessadosPrioridade } = params;
 
     const estadoInicial = calcularInvestimentoInicial(aporteInicial, ativosProcessadosPrioridade, estrategiaReinvestimento, annualInflationRate);
+
     historicoGlobal = {
-        mesesLabels: [0], patrimonioInvestidoHist: [estadoInicial.patrimonioInvestidoInicial],
-        totalAportadoHist: [0], dividendosHist: [0], investidoMesHist: [estadoInicial.investidoNoInicio],
+        mesesLabels: [0],
+        patrimonioInvestidoHist: [estadoInicial.patrimonioInvestidoInicial],
+        totalAportadoHist: [aporteInicial],
+        dividendosHist: [0],
+        investidoMesHist: [estadoInicial.investidoNoInicio],
         ociosoHist: [estadoInicial.dinheiroOciosoInicial],
         aporteMesHist: [aporteInicial]
     };
@@ -476,43 +509,30 @@ function executarCicloSimulacao(params) {
     let totalAportadoAcumulado = aporteInicial;
     let mes = 0;
 
-    let continuar = (m, pInvestido, pOcioso) => m < periodoMeses;
-    if (tipoSimulacao === 'meta-patrimonio') {
-        continuar = (m, pInvestido, pOcioso) => {
-            const anosCompletos = Math.floor(m / 12);
-            const fatorInflacao = Math.pow(1 + annualInflationRate, anosCompletos);
-            const metaCorrigida = metaPatrimonio * fatorInflacao;
-            return (arredondarParaMoeda(pInvestido + pOcioso) < arredondarParaMoeda(metaCorrigida)) && m < MAX_MESES_SIMULACAO;
-        }
-    }
+    const paramsContinuar = { periodoMeses, metaPatrimonio, annualInflationRate };
 
-    while (continuar(mes, historicoGlobal.patrimonioInvestidoHist[mes], historicoGlobal.ociosoHist[mes])) {
+    while (_deveContinuarSimulacao(mes, historicoGlobal.patrimonioInvestidoHist[mes], historicoGlobal.ociosoHist[mes], tipoSimulacao, paramsContinuar)) {
         mes++;
         const anosCompletos = Math.floor((mes - 1) / 12);
         const fatorInflacaoAnualAcumulada = Math.pow(1 + annualInflationRate, anosCompletos);
-        const aporteDoMes = corrigirAporteInflacao ? (aporteMensal * fatorInflacaoAnualAcumulada) : aporteMensal;
-        const aporteDoMesArredondado = arredondarParaMoeda(aporteDoMes);
+        const aporteDoMesBase = corrigirAporteInflacao ? (aporteMensal * fatorInflacaoAnualAcumulada) : aporteMensal;
+        const aporteDoMesArredondado = arredondarParaMoeda(aporteDoMesBase);
 
-        const resultadoMes = executarMesSimulacao(estadoAtual, aporteDoMesArredondado, ativosProcessadosPrioridade, estrategiaReinvestimento, annualInflationRate);
+        const resultadoMes = executarMesSimulacao(estadoAtual, aporteDoMesArredondado, ativosProcessadosPrioridade, estrategiaReinvestimento);
+
         estadoAtual = { cotasPorAtivo: resultadoMes.novasCotas, dinheiroOciosoMes: resultadoMes.dinheiroOciosoFinal };
-        totalAportadoAcumulado = arredondarParaMoeda(totalAportadoAcumulado + aporteDoMesArredondado); // Acumula desde o inicial
+        totalAportadoAcumulado = arredondarParaMoeda(totalAportadoAcumulado + aporteDoMesArredondado);
 
-        historicoGlobal.mesesLabels.push(mes);
-        historicoGlobal.patrimonioInvestidoHist.push(resultadoMes.patrimonioInvestidoMes);
-        historicoGlobal.totalAportadoHist.push(totalAportadoAcumulado);
-        historicoGlobal.dividendosHist.push(resultadoMes.dividendosMes);
-        historicoGlobal.investidoMesHist.push(resultadoMes.investidoMes);
-        historicoGlobal.ociosoHist.push(resultadoMes.dinheiroOciosoFinal);
-        historicoGlobal.aporteMesHist.push(aporteDoMesArredondado);
+        _registrarDadosDoMesNoHistorico(historicoGlobal, mes, resultadoMes, aporteDoMesArredondado, totalAportadoAcumulado);
     }
 
     if (tipoSimulacao === 'meta-patrimonio' && mes === MAX_MESES_SIMULACAO) {
-         const patrimonioFinalTotal = arredondarParaMoeda(historicoGlobal.patrimonioInvestidoHist[mes] + historicoGlobal.ociosoHist[mes]);
-         const anosCompletosFinais = Math.floor(mes / 12);
-         const metaFinalCorrigida = arredondarParaMoeda(metaPatrimonio * Math.pow(1 + annualInflationRate, anosCompletosFinais));
-         if (patrimonioFinalTotal < metaFinalCorrigida) {
-             mostrarMensagemErro(`Meta (corrigida p/ inflação: ${formatarMoeda(metaFinalCorrigida)}) não atingida em ${MAX_MESES_SIMULACAO / 12} anos.`);
-         }
+        const patrimonioFinalTotal = arredondarParaMoeda(historicoGlobal.patrimonioInvestidoHist[mes] + historicoGlobal.ociosoHist[mes]);
+        const anosCompletosFinais = Math.floor(mes / 12);
+        const metaFinalCorrigida = arredondarParaMoeda(metaPatrimonio * Math.pow(1 + annualInflationRate, anosCompletosFinais));
+        if (patrimonioFinalTotal < metaFinalCorrigida) {
+            mostrarMensagemErro(`Meta (corrigida p/ inflação: ${formatarMoeda(metaFinalCorrigida)}) não atingida em ${MAX_MESES_SIMULACAO / 12} anos.`);
+        }
     }
 
     const ultimoIndice = historicoGlobal.mesesLabels.length - 1;
