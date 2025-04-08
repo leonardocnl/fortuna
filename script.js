@@ -257,125 +257,195 @@ function processarAtivos(ativosRaw) {
     });
 }
 
+function _alocarAportePrincipal(aporteMensal, ativosProcessados, cotasIniciais) {
+    let valorGastoFase1 = 0;
+    let sobrasFase1 = 0;
+    const cotasAtualizadas = [...cotasIniciais];
+    const ativosOrdemOriginal = [...ativosProcessados].sort((a, b) => a.originalIndex - b.originalIndex);
 
-function executarMesSimulacao(estadoAnterior, aporteDoMes, ativosProcessadosPrioridade, estrategiaReinvestimento, annualInflationRate) { // Recebe taxa ANUAL
-    const { cotasPorAtivo: cotasAtuais, dinheiroOciosoMes: ociosoAnterior } = estadoAnterior;
-    const _aporteMensal = Number(aporteDoMes) || 0;
-    const _ociosoAnterior = Number(ociosoAnterior) || 0;
-    const _dividendosMesAnterior = cotasAtuais.reduce((soma, qtd, index) => {
-        const ativo = ativosProcessadosPrioridade.find(a => a.originalIndex === index);
-        return soma + (qtd * (ativo?.dividendos || 0));
-    }, 0);
-    let _valorInvestidoEsteMes = 0;
-    const novasCotas = [...cotasAtuais];
-    let _sobrasFase1Pool = 0;
-    const ativosCompráveis = ativosProcessadosPrioridade.filter(a => a.preco > 0);
-    if (ativosCompráveis.length === 0) {
-        const patrimonioInvestidoMes = arredondarParaMoeda(cotasAtuais.reduce((s, q, i) => { const a = ativosProcessadosPrioridade.find(at => at.originalIndex === i); return s + (q * (a?.preco || 0)); }, 0));
-        const dinheiroNaoUsado = _aporteMensal + _dividendosMesAnterior + _ociosoAnterior;
-        return { novasCotas: cotasAtuais, dinheiroOciosoFinal: arredondarParaMoeda(dinheiroNaoUsado), dividendosMes: 0, investidoMes: 0, patrimonioInvestidoMes: patrimonioInvestidoMes };
-    }
-    const menorPrecoGeral = Math.min(...ativosCompráveis.map(a => a.preco));
-
-    if (_aporteMensal > 0) {
-       const ativosOrdemOriginal = [...ativosProcessadosPrioridade].sort((a,b) => a.originalIndex - b.originalIndex);
-       ativosOrdemOriginal.forEach(ativo => {
-           if (ativo.preco <= 0) return;
-           const valorAlocarFase1 = _aporteMensal * (ativo.alocacao / 100);
-           let gastoFase1Ativo = 0;
-           if (valorAlocarFase1 >= ativo.preco) {
-               const cotasComprar = Math.floor(valorAlocarFase1 / ativo.preco);
-               if (cotasComprar > 0) {
-                   gastoFase1Ativo = cotasComprar * ativo.preco;
-                   novasCotas[ativo.originalIndex] += cotasComprar;
-                   _valorInvestidoEsteMes += gastoFase1Ativo;
-               }
-           }
-           _sobrasFase1Pool += (valorAlocarFase1 - gastoFase1Ativo);
-       });
-    }
-
-    const _poolReinvestimento = _sobrasFase1Pool + _dividendosMesAnterior + _ociosoAnterior;
-    let _dinheiroRestanteFase2 = _poolReinvestimento;
-
-    if (_dinheiroRestanteFase2 >= menorPrecoGeral) {
-        if (estrategiaReinvestimento === 'rebalancear') {
-            const patrimonioInvestidoAntesFase2 = novasCotas.reduce((soma, qtd, index) => {
-                 const ativo = ativosProcessadosPrioridade.find(a => a.originalIndex === index);
-                 return soma + (qtd * (ativo?.preco || 0));
-            }, 0);
-            if (patrimonioInvestidoAntesFase2 > 0) {
-                let ativosParaRebalancear = [];
-                ativosProcessadosPrioridade.forEach(ativo => {
-                    if (ativo.preco <= 0) return;
-                    const valorAtualAtivo = novasCotas[ativo.originalIndex] * ativo.preco;
-                    const percentualAtual = (valorAtualAtivo / patrimonioInvestidoAntesFase2) * 100;
-                    const percentualMeta = ativo.alocacao;
-                    const diferenca = percentualMeta - percentualAtual;
-                    if (diferenca > 0 && _dinheiroRestanteFase2 >= ativo.preco) {
-                        ativosParaRebalancear.push({ ...ativo, diferenca: diferenca });
-                    }
-                });
-                if (ativosParaRebalancear.length > 0) {
-                    ativosParaRebalancear.sort((a, b) => {
-                        if (b.diferenca !== a.diferenca) { return b.diferenca - a.diferenca; }
-                        return b.yieldMensal - a.yieldMensal;
-                    });
-                    const targetAsset = ativosParaRebalancear[0];
-                    if (_dinheiroRestanteFase2 >= targetAsset.preco) {
-                         const cotasComprar = Math.floor(_dinheiroRestanteFase2 / targetAsset.preco);
-                         if (cotasComprar > 0) {
-                             const gastoFase2a = cotasComprar * targetAsset.preco;
-                             novasCotas[targetAsset.originalIndex] += cotasComprar;
-                             _valorInvestidoEsteMes += gastoFase2a;
-                             _dinheiroRestanteFase2 -= gastoFase2a;
-                         }
-                    }
-                }
+    if (aporteMensal > 0) {
+        ativosOrdemOriginal.forEach(ativo => {
+            if (ativo.preco <= 0) {
+                sobrasFase1 += aporteMensal * (ativo.alocacao / 100);
+                return;
             }
-            if (_dinheiroRestanteFase2 >= menorPrecoGeral) {
-                 for (const ativo of ativosProcessadosPrioridade) {
-                     if (ativo.preco <= 0 || _dinheiroRestanteFase2 < ativo.preco) continue;
-                     const cotasComprar = Math.floor(_dinheiroRestanteFase2 / ativo.preco);
-                     if (cotasComprar > 0) {
-                         const gastoFase2b = cotasComprar * ativo.preco;
-                         novasCotas[ativo.originalIndex] += cotasComprar;
-                         _valorInvestidoEsteMes += gastoFase2b;
-                         _dinheiroRestanteFase2 -= gastoFase2b;
-                     }
-                     if (_dinheiroRestanteFase2 < menorPrecoGeral) break;
-                 }
-            }
-        } else {
-            for (const ativo of ativosProcessadosPrioridade) {
-                if (ativo.preco <= 0 || _dinheiroRestanteFase2 < ativo.preco) continue;
-                const cotasComprar = Math.floor(_dinheiroRestanteFase2 / ativo.preco);
+            const valorAlocarAtivo = arredondarParaMoeda(aporteMensal * (ativo.alocacao / 100));
+            let gastoFase1Ativo = 0;
+            if (valorAlocarAtivo >= ativo.preco) {
+                const cotasComprar = Math.floor(valorAlocarAtivo / ativo.preco);
                 if (cotasComprar > 0) {
-                    const gastoFase2 = cotasComprar * ativo.preco;
-                    novasCotas[ativo.originalIndex] += cotasComprar;
-                    _valorInvestidoEsteMes += gastoFase2;
-                    _dinheiroRestanteFase2 -= gastoFase2;
+                    gastoFase1Ativo = arredondarParaMoeda(cotasComprar * ativo.preco);
+                    cotasAtualizadas[ativo.originalIndex] += cotasComprar;
+                    valorGastoFase1 = arredondarParaMoeda(valorGastoFase1 + gastoFase1Ativo);
                 }
-                if (_dinheiroRestanteFase2 < menorPrecoGeral) break;
+            }
+            sobrasFase1 = arredondarParaMoeda(sobrasFase1 + (valorAlocarAtivo - gastoFase1Ativo));
+        });
+    }
+
+    return { cotasAtualizadas, valorGastoFase1, sobrasFase1 };
+}
+
+function _reinvestirPorPrioridade(dinheiroDisponivel, cotasIniciais, ativosProcessadosPrioridade, menorPrecoGeral) {
+    let dinheiroRestante = dinheiroDisponivel;
+    let valorGasto = 0;
+    const cotasAtualizadas = [...cotasIniciais];
+
+    if (dinheiroRestante < menorPrecoGeral) {
+        return { cotasAtualizadas, valorGasto, sobrasRestantes: dinheiroRestante };
+    }
+
+    for (const ativo of ativosProcessadosPrioridade) {
+        if (ativo.preco <= 0 || dinheiroRestante < ativo.preco) continue;
+
+        const cotasComprar = Math.floor(dinheiroRestante / ativo.preco);
+        if (cotasComprar > 0) {
+            const gastoAtivo = arredondarParaMoeda(cotasComprar * ativo.preco);
+            cotasAtualizadas[ativo.originalIndex] += cotasComprar;
+            valorGasto = arredondarParaMoeda(valorGasto + gastoAtivo);
+            dinheiroRestante = arredondarParaMoeda(dinheiroRestante - gastoAtivo);
+        }
+        if (dinheiroRestante < menorPrecoGeral) break;
+    }
+
+    return { cotasAtualizadas, valorGasto, sobrasRestantes: dinheiroRestante };
+}
+
+function _reinvestirPorRebalanceamento(dinheiroDisponivel, cotasIniciais, ativosProcessadosPrioridade, menorPrecoGeral) {
+    let dinheiroRestante = dinheiroDisponivel;
+    let valorGasto = 0;
+    const cotasAtualizadas = [...cotasIniciais];
+
+    if (dinheiroRestante < menorPrecoGeral) {
+        return { cotasAtualizadas, valorGasto, sobrasRestantes: dinheiroRestante };
+    }
+
+    const patrimonioInvestidoAntesRebalanceamento = cotasAtualizadas.reduce((soma, qtd, index) => {
+        const ativo = ativosProcessadosPrioridade.find(a => a.originalIndex === index);
+        return soma + (qtd * (ativo?.preco || 0));
+    }, 0);
+
+    if (patrimonioInvestidoAntesRebalanceamento > 0) {
+        let ativosParaRebalancear = [];
+        ativosProcessadosPrioridade.forEach(ativo => {
+            if (ativo.preco <= 0) return;
+            const valorAtualAtivo = cotasAtualizadas[ativo.originalIndex] * ativo.preco;
+            const percentualAtual = (valorAtualAtivo / patrimonioInvestidoAntesRebalanceamento) * 100;
+            const percentualMeta = ativo.alocacao;
+            const diferenca = percentualMeta - percentualAtual;
+
+            if (diferenca > 0.01 && dinheiroRestante >= ativo.preco) {
+                ativosParaRebalancear.push({ ...ativo, diferenca: diferenca });
+            }
+        });
+
+        if (ativosParaRebalancear.length > 0) {
+            ativosParaRebalancear.sort((a, b) => {
+                if (Math.abs(b.diferenca - a.diferenca) > 0.001) {
+                    return b.diferenca - a.diferenca;
+                }
+                return (b.yieldMensal || 0) - (a.yieldMensal || 0);
+            });
+
+            const targetAsset = ativosParaRebalancear[0];
+            if (dinheiroRestante >= targetAsset.preco) {
+                const cotasComprar = Math.floor(dinheiroRestante / targetAsset.preco);
+                if (cotasComprar > 0) {
+                    const gastoRebalanceio = arredondarParaMoeda(cotasComprar * targetAsset.preco);
+                    cotasAtualizadas[targetAsset.originalIndex] += cotasComprar;
+                    valorGasto = arredondarParaMoeda(valorGasto + gastoRebalanceio);
+                    dinheiroRestante = arredondarParaMoeda(dinheiroRestante - gastoRebalanceio);
+                }
             }
         }
     }
-    const _sobrasFinaisMes = _dinheiroRestanteFase2;
-    const _dividendosGeradosMesAtual = novasCotas.reduce((soma, qtd, index) => {
+
+    if (dinheiroRestante >= menorPrecoGeral) {
+        const resultadoPrioridade = _reinvestirPorPrioridade(dinheiroRestante, cotasAtualizadas, ativosProcessadosPrioridade, menorPrecoGeral);
+        valorGasto = arredondarParaMoeda(valorGasto + resultadoPrioridade.valorGasto);
+        dinheiroRestante = resultadoPrioridade.sobrasRestantes;
+        resultadoPrioridade.cotasAtualizadas.forEach((qtd, index) => {
+             cotasAtualizadas[index] = qtd;
+        });
+    }
+
+    return { cotasAtualizadas, valorGasto, sobrasRestantes: dinheiroRestante };
+}
+
+
+function _reinvestirFundos(poolReinvestimento, cotasIniciais, ativosProcessadosPrioridade, estrategiaReinvestimento, menorPrecoGeral) {
+    if (poolReinvestimento < menorPrecoGeral) {
+        return { cotasAtualizadas: [...cotasIniciais], valorGastoFase2: 0, sobrasFinais: poolReinvestimento };
+    }
+
+    let resultadoReinvestimento;
+    if (estrategiaReinvestimento === 'rebalancear') {
+        resultadoReinvestimento = _reinvestirPorRebalanceamento(poolReinvestimento, cotasIniciais, ativosProcessadosPrioridade, menorPrecoGeral);
+    } else {
+        resultadoReinvestimento = _reinvestirPorPrioridade(poolReinvestimento, cotasIniciais, ativosProcessadosPrioridade, menorPrecoGeral);
+    }
+
+    return {
+        cotasAtualizadas: resultadoReinvestimento.cotasAtualizadas,
+        valorGastoFase2: resultadoReinvestimento.valorGasto,
+        sobrasFinais: resultadoReinvestimento.sobrasRestantes
+    };
+}
+
+function executarMesSimulacao(estadoAnterior, aporteDoMes, ativosProcessadosPrioridade, estrategiaReinvestimento) {
+    const { cotasPorAtivo: cotasMesAnterior, dinheiroOciosoMes: ociosoAnterior } = estadoAnterior;
+    const aporteMensal = Number(aporteDoMes) || 0;
+    const ociosoMesAnterior = Number(ociosoAnterior) || 0;
+
+    const dividendosRecebidos = arredondarParaMoeda(cotasMesAnterior.reduce((soma, qtd, index) => {
         const ativo = ativosProcessadosPrioridade.find(a => a.originalIndex === index);
         return soma + (qtd * (ativo?.dividendos || 0));
-    }, 0);
+    }, 0));
+
+    const ativosCompráveis = ativosProcessadosPrioridade.filter(a => a.preco > 0);
+    if (ativosCompráveis.length === 0) {
+        const patrimonioInvestidoMes = arredondarParaMoeda(cotasMesAnterior.reduce((s, q, i) => {
+            const a = ativosProcessadosPrioridade.find(at => at.originalIndex === i); return s + (q * (a?.preco || 0));
+        }, 0));
+        const dinheiroNaoUsado = aporteMensal + dividendosRecebidos + ociosoMesAnterior;
+        return {
+            novasCotas: cotasMesAnterior,
+            dinheiroOciosoFinal: arredondarParaMoeda(dinheiroNaoUsado),
+            dividendosMes: 0,
+            investidoMes: 0,
+            patrimonioInvestidoMes: patrimonioInvestidoMes
+        };
+    }
+    const menorPrecoGeral = Math.min(...ativosCompráveis.map(a => a.preco));
+
+    const resultadoFase1 = _alocarAportePrincipal(aporteMensal, ativosProcessadosPrioridade, cotasMesAnterior);
+    let cotasAposFase1 = resultadoFase1.cotasAtualizadas;
+    let valorInvestidoEsteMes = resultadoFase1.valorGastoFase1;
+
+    const poolReinvestimento = arredondarParaMoeda(resultadoFase1.sobrasFase1 + dividendosRecebidos + ociosoMesAnterior);
+
+    const resultadoFase2 = _reinvestirFundos(poolReinvestimento, cotasAposFase1, ativosProcessadosPrioridade, estrategiaReinvestimento, menorPrecoGeral);
+    const cotasFinaisMes = resultadoFase2.cotasAtualizadas;
+    valorInvestidoEsteMes = arredondarParaMoeda(valorInvestidoEsteMes + resultadoFase2.valorGastoFase2);
+    const sobrasFinaisMes = resultadoFase2.sobrasFinais;
+
+    const dividendosGeradosParaProximoMes = arredondarParaMoeda(cotasFinaisMes.reduce((soma, qtd, index) => {
+        const ativo = ativosProcessadosPrioridade.find(a => a.originalIndex === index);
+        return soma + (qtd * (ativo?.dividendos || 0));
+    }, 0));
+
     const patrimonioInvestidoMes = arredondarParaMoeda(
-        novasCotas.reduce((s, q, i) => {
+        cotasFinaisMes.reduce((s, q, i) => {
             const a = ativosProcessadosPrioridade.find(at => at.originalIndex === i);
             return s + (q * (a?.preco || 0));
         }, 0)
     );
+
     return {
-        novasCotas: novasCotas,
-        dinheiroOciosoFinal: arredondarParaMoeda(_sobrasFinaisMes),
-        dividendosMes: arredondarParaMoeda(_dividendosGeradosMesAtual),
-        investidoMes: arredondarParaMoeda(_valorInvestidoEsteMes),
+        novasCotas: cotasFinaisMes,
+        dinheiroOciosoFinal: sobrasFinaisMes,
+        dividendosMes: dividendosGeradosParaProximoMes,
+        investidoMes: valorInvestidoEsteMes,
         patrimonioInvestidoMes: patrimonioInvestidoMes
     };
 }
