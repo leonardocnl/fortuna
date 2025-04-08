@@ -1951,6 +1951,7 @@ function setupEventListeners() {
                     event.target.value = valorNum.toLocaleString('pt-BR', {
                         minimumFractionDigits: 2,
                         maximumFractionDigits: 2,
+                        _,
                     })
                     clearTimeout(gTimeoutSimulacao)
                     gTimeoutSimulacao = setTimeout(() => {
@@ -2022,6 +2023,12 @@ function setupEventListeners() {
             console.error('Função exportTableToCSV não definida.')
         }
     })
+
+    document.getElementById('salvar-cenario-btn')?.addEventListener('click', handleSalvarCenario)
+    document
+        .getElementById('carregar-cenario-btn')
+        ?.addEventListener('click', handleCarregarCenario)
+    document.getElementById('excluir-cenario-btn')?.addEventListener('click', handleExcluirCenario)
 }
 
 function exportTableToCSV(tableId, filename = 'simulacao_fortuna.csv') {
@@ -2120,11 +2127,10 @@ function _obterDadosFormularioAtual() {
 
     const getRawValueFromMask = (id) => {
         const maskInstance = imaskInstances[id]
-        if (maskInstance) {
-            const unmasked = maskInstance.unmaskedValue
-            return parseFloat(unmasked.replace(',', '.')) || 0
+        if (maskInstance && maskInstance.unmaskedValue) {
+            const parsed = parseFloat(maskInstance.unmaskedValue)
+            return isNaN(parsed) ? 0 : parsed
         }
-
         return getRawValue(id)
     }
 
