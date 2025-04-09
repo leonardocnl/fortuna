@@ -1951,7 +1951,6 @@ function setupEventListeners() {
                     event.target.value = valorNum.toLocaleString('pt-BR', {
                         minimumFractionDigits: 2,
                         maximumFractionDigits: 2,
-                        _,
                     })
                     clearTimeout(gTimeoutSimulacao)
                     gTimeoutSimulacao = setTimeout(() => {

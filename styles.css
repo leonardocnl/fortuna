@@ -739,7 +739,7 @@ body {
     font-size: 0.8rem;
     font-weight: 600;
     letter-spacing: 0.5px;
-    text-transform: uppercase;
+    /* text-transform: uppercase; */
     border-bottom: 2px solid var(--color-border);
 }
 
@@ -969,7 +969,7 @@ body {
     font-size: 0.75rem;
     font-weight: 500;
     letter-spacing: 0.5px;
-    text-transform: uppercase;
+    /* text-transform: uppercase; */
 }
 
 .about-section-styled {
@@ -1552,4 +1552,52 @@ body {
         text-decoration: none;
         color: #000;
     }
+}
+
+.tooltip-trigger {
+    cursor: help;
+    position: relative;
+    margin-left: 4px;
+    font-size: 0.9em;
+
+    display: inline-block !important;
+    color: var(--color-accent) !important;
+    vertical-align: middle;
+}
+
+.tooltip-trigger::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-bottom: 5px;
+
+    background-color: var(--color-surface-alt, #f1f3f5);
+    color: var(--color-text, #212529);
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--color-border-light, #e9ecef);
+    box-shadow: var(--shadow-sm);
+
+    font-size: 0.8rem;
+    font-weight: 400;
+    font-family: 'Inter', sans-serif;
+    line-height: 1.4;
+    text-align: left;
+    white-space: normal;
+    width: max-content;
+    max-width: 250px;
+
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    z-index: 10;
+    transition: opacity 0.2s ease-in-out, visibility 0.2s ease-in-out;
+    text-transform: none !important;
+}
+
+.tooltip-trigger:hover::after {
+    opacity: 1;
+    visibility: visible;
 }

@@ -187,6 +187,10 @@
                                     />
                                     <label for="corrigir-aporte-inflacao" style="margin-bottom: 0">
                                         Corrigir Aporte Mensal pela Inflação?
+                                        <i
+                                            class="fas fa-question-circle tooltip-trigger"
+                                            data-tooltip="Se marcado, o valor do aporte mensal informado será aumentado anualmente pela taxa de inflação estimada."
+                                        ></i>
                                     </label>
                                 </div>
                                 <small
@@ -199,9 +203,12 @@
 
                             <div class="input-group">
                                 <label for="inflacao-anual"
-                                    ><i class="fas fa-chart-line"></i> Inflação Anual Estimada
-                                    (%):</label
-                                >
+                                    ><i class="fas fa-chart-line"></i> Inflação Anual Estimada (%)
+                                    <i
+                                        class="fas fa-question-circle tooltip-trigger"
+                                        data-tooltip="Usada para calcular o valor 'real' (poder de compra) dos resultados e metas, e opcionalmente para corrigir o aporte mensal. Informe a taxa anual."
+                                    ></i
+                                ></label>
                                 <input
                                     type="text"
                                     id="inflacao-anual"
@@ -217,9 +224,12 @@
 
                             <div class="input-group">
                                 <label for="estrategia-reinvestimento"
-                                    ><i class="fas fa-random"></i> Estratégia de
-                                    Reinvestimento:</label
-                                >
+                                    ><i class="fas fa-random"></i> Estratégia de Reinvestimento:
+                                    <i
+                                        class="fas fa-question-circle tooltip-trigger"
+                                        data-tooltip="'Rebalancear': Tenta manter as % definidas para os ativos. 'Seguir Prioridade': Reinveste seguindo a ordem definida na lista de prioridade abaixo."
+                                    ></i
+                                ></label>
                                 <select
                                     id="estrategia-reinvestimento"
                                     name="estrategia-reinvestimento"
@@ -244,8 +254,12 @@
                             >
                                 <label for="meta-patrimonio"
                                     ><i class="fas fa-bullseye"></i> Meta de Patrimônio Total (R$)
-                                    (Valor de Hoje)</label
-                                >
+                                    (Valor de Hoje)
+                                    <i
+                                        class="fas fa-question-circle tooltip-trigger"
+                                        data-tooltip="Informe o valor desejado em poder de compra atual. A simulação corrigirá automaticamente esta meta pela inflação ao longo do tempo."
+                                    ></i
+                                ></label>
                                 <input
                                     type="text"
                                     id="meta-patrimonio"
@@ -282,8 +296,12 @@
                             <div class="input-group" id="custo-vida-container">
                                 <label for="custo-vida"
                                     ><i class="fas fa-home"></i> Custo de Vida Mensal Desejado (R$)
-                                    (Valor de Hoje)</label
-                                >
+                                    (Valor de Hoje)
+                                    <i
+                                        class="fas fa-question-circle tooltip-trigger"
+                                        data-tooltip="Opcional. Usado para estimar quando os dividendos mensais (corrigidos pela inflação) cobrirão este custo (também corrigido)."
+                                    ></i
+                                ></label>
                                 <input
                                     type="text"
                                     id="custo-vida"
@@ -369,9 +387,13 @@
                                     class="section-description"
                                     style="font-size: 0.85rem; margin-bottom: 0.8rem"
                                 >
-                                    Defina a ordem em que o dinheiro extra será reinvestido na
-                                    estratégia 'Seguir Prioridade'. O primeiro da lista tem
-                                    prioridade 1.
+                                    Defina a ordem em que o dinheiro extra (dividendos, sobras) será
+                                    reinvestido na estratégia 'Seguir Prioridade'. O primeiro da
+                                    lista tem prioridade 1.
+                                    <i
+                                        class="fas fa-question-circle tooltip-trigger"
+                                        data-tooltip="Esta ordem só é utilizada se a estratégia 'Seguir Prioridade Definida' estiver selecionada acima. Arraste os ativos para mudar a ordem."
+                                    ></i>
                                 </p>
                                 <ul
                                     id="priority-sort-list"
