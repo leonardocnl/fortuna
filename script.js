@@ -8,6 +8,7 @@ const MAX_MESES_SIMULACAO = 40 * 12
 const MIN_INVESTIMENTO_RELEVANTE = 0.01
 let imaskInstances = {}
 let gSortableInstance = null
+let isPageLoading = true
 
 function calcularYieldSeguro(dividendos, preco) {
     const dividendoNum = Number(dividendos) || 0
@@ -915,10 +916,10 @@ function calcularSimulacaoPrincipal() {
         return
     }
     gBloqueioRecursao = true
+
     try {
         const inputs = obterInputsSimulacao()
         if (!inputs) {
-            gBloqueioRecursao = false
             return
         }
         const validacao = validarInputs(inputs)
@@ -929,14 +930,12 @@ function calcularSimulacaoPrincipal() {
             } else {
                 limparResultadosVisuais(false)
             }
-            gBloqueioRecursao = false
             return
         }
         const ativosProcessadosPrioridade = processarAtivos(inputs.ativos)
         if (ativosProcessadosPrioridade.length === 0 && inputs.ativos.length > 0) {
             mostrarMensagemErro('Erro ao processar ativos. Verifique os dados.')
             limparResultadosVisuais()
-            gBloqueioRecursao = false
             return
         }
         const paramsSimulacao = {
@@ -953,7 +952,6 @@ function calcularSimulacaoPrincipal() {
                     inputs.metaPatrimonio * Math.pow(1 + inputs.annualInflationRate, 0),
                 )
         ) {
-            // Compara com meta no tempo 0
             const estadoInicial = calcularInvestimentoInicial(
                 inputs.aporteInicial,
                 ativosProcessadosPrioridade,
@@ -993,6 +991,7 @@ function calcularSimulacaoPrincipal() {
         } else {
             resultadoSimulacao = executarCicloSimulacao(paramsSimulacao)
         }
+
         if (resultadoSimulacao && resultadoSimulacao.historico) {
             atualizarInterfaceUsuario(
                 resultadoSimulacao.dadosFinais,
@@ -1007,6 +1006,11 @@ function calcularSimulacaoPrincipal() {
         mostrarMensagemErro(`Erro inesperado: ${error.message}. Verifique o console (F12).`)
         limparResultadosVisuais()
     } finally {
+        const btn = document.getElementById('simular-btn')
+        if (btn) {
+            btn.innerHTML = '<i class="fas fa-play-circle"></i> Simular Resultados'
+            _atualizarEstadoBotaoSimular()
+        }
         gBloqueioRecursao = false
     }
 }
@@ -1395,6 +1399,7 @@ function popularTabelaDetalhada(historico, aporteInicial) {
     const tblBody = document.getElementById('simulation-table')?.querySelector('tbody')
     if (!tblBody) return false
     tblBody.innerHTML = ''
+
     const { mesesLabels, patrimonioInvestidoHist, dividendosHist, ociosoHist, aporteMesHist } =
         historico
     const annualInflationRate = historicoGlobal?.dadosFinais?.annualInflationRate || 0
@@ -1402,6 +1407,7 @@ function popularTabelaDetalhada(historico, aporteInicial) {
     const row0 = tblBody.insertRow()
     row0.insertCell().textContent = 0
     row0.insertCell().textContent = formatarMoeda(aporteInicial)
+    row0.insertCell().textContent = formatarMoeda(0)
     row0.insertCell().textContent = formatarMoeda(0)
     const pInv0 = patrimonioInvestidoHist[0] || 0
     const pOc0 = ociosoHist[0] || 0
@@ -1425,16 +1431,24 @@ function popularTabelaDetalhada(historico, aporteInicial) {
             const pInv = patrimonioInvestidoHist[i] || 0
             const pOc = ociosoHist[i] || 0
             const pTotNominal = arredondarParaMoeda(pInv + pOc)
+            const dividendoNominal = dividendosHist[i] || 0
+
             const anosCompletos = Math.floor((i - 1) / 12)
             const fatorDeflacaoAnual = Math.pow(1 + annualInflationRate, anosCompletos)
+
             const pTotReal =
                 fatorDeflacaoAnual > 0
                     ? arredondarParaMoeda(pTotNominal / fatorDeflacaoAnual)
                     : pTotNominal
+            const dividendoReal =
+                fatorDeflacaoAnual > 0
+                    ? arredondarParaMoeda(dividendoNominal / fatorDeflacaoAnual)
+                    : dividendoNominal
 
             row.insertCell().textContent = mesesLabels[i]
             row.insertCell().textContent = formatarMoeda(aporteMesHist[i] || 0)
-            row.insertCell().textContent = formatarMoeda(dividendosHist[i] || 0)
+            row.insertCell().textContent = formatarMoeda(dividendoNominal)
+            row.insertCell().textContent = formatarMoeda(dividendoReal)
             row.insertCell().textContent = formatarMoeda(pInv)
             row.insertCell().textContent = formatarMoeda(pTotNominal)
             row.insertCell().textContent = formatarMoeda(pTotReal)
@@ -1447,7 +1461,7 @@ function popularTabelaDetalhada(historico, aporteInicial) {
         return true
     } else {
         tblBody.innerHTML =
-            '<tr class="placeholder-row"><td colspan="6">Nenhum mês simulado para detalhar.</td></tr>' // Colspan 6
+            '<tr class="placeholder-row"><td colspan="7" style="text-align: center; padding: 1rem;">Nenhum mês simulado para detalhar (além do inicial).</td></tr>'
         return false
     }
 }
@@ -1533,39 +1547,40 @@ function atualizarListaAtivos() {
     const placeholder = listEl?.querySelector('.lista-vazia-placeholder')
     const totalAlocadoEl = document.getElementById('total-alocado')
     const feedbackEl = document.getElementById('alocacao-feedback')
+
     if (!listEl || !totalAlocadoEl || !feedbackEl || !priorityListEl) {
         console.error('Elementos da lista de ativos ou lista de prioridade não encontrados.')
         return
     }
+
     listEl.querySelectorAll('.ativo-item').forEach((el) => el.remove())
     priorityListEl.innerHTML = ''
     let somaAlocacoes = 0
+
     if (ativosLS.length === 0) {
         if (placeholder) placeholder.style.display = 'flex'
         priorityListEl.innerHTML =
             '<li class="priority-placeholder">Adicione ativos para definir a prioridade.</li>'
+        if (gSortableInstance) {
+            gSortableInstance.option('disabled', true)
+        }
     } else {
         if (placeholder) placeholder.style.display = 'none'
         const ativosOrdenadosPrioridade = [...ativosLS].sort(
             (a, b) => (parseInt(a.prioridade, 10) || 999) - (parseInt(b.prioridade, 10) || 999),
         )
-        ativosOrdenadosPrioridade.forEach((ativo) => {
-            const indexNoLS = ativosLS.findIndex(
-                (a) =>
-                    a.nome === ativo.nome &&
-                    a.preco === ativo.preco &&
-                    a.alocacao === ativo.alocacao,
-            )
-            if (indexNoLS === -1) return
+
+        ativosLS.forEach((ativo, indexNoLS) => {
             const nome = ativo.nome || 'S/Nome'
             const preco = parseFormattedNumber(ativo.preco)
             const dividendo = parseFormattedNumber(ativo.dividendos)
             const alocacao = parseFormattedNumber(ativo.alocacao)
-            const yieldMensal = calcularYieldSeguro(dividendo, preco)
-            const yieldAnual = yieldMensal * 12 * 100
             somaAlocacoes += alocacao
+
             const el = document.createElement('div')
             el.className = 'ativo-item'
+            const yieldMensal = calcularYieldSeguro(dividendo, preco)
+            const yieldAnual = yieldMensal * 12 * 100
             el.innerHTML = `
                 <div class="ativo-info"><p title="${nome}">${nome}</p>
                     <div class="ativo-details">
@@ -1587,6 +1602,7 @@ function atualizarListaAtivos() {
                      <button class="btn btn-icon editar" data-index="${indexNoLS}" title="Editar"><i class="fas fa-edit"></i></button>
                      <button class="btn btn-icon remover" data-index="${indexNoLS}" title="Remover"><i class="fas fa-trash"></i></button>
                 </div>`
+
             el.querySelector('.editar').addEventListener('click', (e) => {
                 const idx = parseInt(e.currentTarget.getAttribute('data-index'), 10)
                 if (!isNaN(idx)) abrirModalEdicaoAtivo(idx, e)
@@ -1596,15 +1612,27 @@ function atualizarListaAtivos() {
                 if (!isNaN(idx)) removerAtivo(idx, e)
             })
             listEl.appendChild(el)
+        })
+
+        ativosOrdenadosPrioridade.forEach((ativo) => {
+            const indexOriginal = ativosLS.findIndex(
+                (a) =>
+                    a.nome === ativo.nome &&
+                    a.preco === ativo.preco &&
+                    a.alocacao === ativo.alocacao,
+            )
+            if (indexOriginal === -1) return
+
             const prioEl = document.createElement('li')
             prioEl.className = 'priority-item'
-            prioEl.setAttribute('data-ls-index', indexNoLS)
+            prioEl.setAttribute('data-ls-index', indexOriginal)
             prioEl.innerHTML = `
                 <i class="fas fa-grip-vertical drag-handle" title="Arrastar para reordenar"></i>
-                <span class="asset-name">${nome}</span>
+                <span class="asset-name">${ativo.nome || 'S/Nome'}</span>
             `
             priorityListEl.appendChild(prioEl)
         })
+
         if (typeof Sortable !== 'undefined') {
             if (gSortableInstance) {
                 gSortableInstance.destroy()
@@ -1615,6 +1643,7 @@ function atualizarListaAtivos() {
                 dragClass: 'sortable-drag',
                 handle: '.drag-handle',
                 onEnd: handlePriorityReorder,
+                disabled: false,
             })
         } else {
             console.error(
@@ -1622,20 +1651,27 @@ function atualizarListaAtivos() {
             )
         }
     }
+
     totalAlocadoEl.textContent = somaAlocacoes.toFixed(2)
-    const diffAlocacao = Math.abs(somaAlocacoes - 100)
     feedbackEl.className = ''
-    if (diffAlocacao < 0.01) {
-        feedbackEl.textContent = '(100% OK)'
+    const diffAlocacao = Math.abs(somaAlocacoes - 100)
+
+    if (ativosLS.length === 0) {
+        feedbackEl.textContent = ''
+    } else if (diffAlocacao < 0.01) {
+        feedbackEl.textContent = '(100% - Pronto!)'
         feedbackEl.classList.add('text-success')
+    } else if (somaAlocacoes < 100) {
+        feedbackEl.textContent = `(Faltam ${(100 - somaAlocacoes).toFixed(2)}%)`
+        feedbackEl.classList.add('text-danger')
     } else {
-        feedbackEl.textContent = `(${somaAlocacoes.toFixed(2)}% - Ajuste para 100%)`
+        feedbackEl.textContent = `(Excedeu ${(somaAlocacoes - 100).toFixed(2)}%)`
         feedbackEl.classList.add('text-danger')
     }
+
+    _atualizarEstadoBotaoSimular()
+
     clearTimeout(gTimeoutSimulacao)
-    gTimeoutSimulacao = setTimeout(() => {
-        if (!gBloqueioRecursao) calcularSimulacaoPrincipal()
-    }, 400)
 }
 
 function handlePriorityReorder(event) {
@@ -1916,6 +1952,54 @@ function inicializarMascarasModal() {
     })
 }
 
+function _atualizarEstadoBotaoSimular() {
+    const simularBtn = document.getElementById('simular-btn')
+    if (!simularBtn) return
+
+    let condicoesOk = false
+    try {
+        const ativos = JSON.parse(localStorage.getItem('ativos') || '[]')
+        const temAtivos = ativos.length > 0
+        const somaAlocacoes = temAtivos
+            ? ativos.reduce((soma, ativo) => soma + parseFormattedNumber(ativo.alocacao), 0)
+            : 0
+        const alocacaoOk = Math.abs(somaAlocacoes - 100) < 0.01
+
+        const tipoSimulacao = document.getElementById('tipo-simulacao')?.value
+        const periodoValor = parseInt(document.getElementById('periodo-valor')?.value || '0', 10)
+        const metaPatrimonio = parseFormattedNumber(
+            document.getElementById('meta-patrimonio')?.value,
+        )
+
+        // --- Verificação de Aporte Adicionada ---
+        const aporteInicialValor = parseFormattedNumber(
+            document.getElementById('aporte-inicial')?.value,
+        )
+        const aporteMensalValor = parseFormattedNumber(
+            document.getElementById('aporte-mensal')?.value,
+        )
+        const aporteOk = aporteInicialValor > 0 || aporteMensalValor > 0
+        // --- Fim Verificação de Aporte ---
+
+        const periodoOk = tipoSimulacao === 'periodo' && periodoValor > 0
+        const metaOk = tipoSimulacao === 'meta-patrimonio' && metaPatrimonio > 0
+
+        // --- Condição Final Atualizada (inclui aporteOk) ---
+        condicoesOk = temAtivos && alocacaoOk && (periodoOk || metaOk) && aporteOk
+    } catch (e) {
+        console.error('Erro ao verificar condições para habilitar botão:', e)
+        condicoesOk = false
+    }
+
+    simularBtn.disabled = !condicoesOk
+
+    if (condicoesOk) {
+        simularBtn.classList.remove('button-is-disabled')
+    } else {
+        simularBtn.classList.add('button-is-disabled')
+    }
+}
+
 function setupEventListeners() {
     const modal = document.getElementById('modal-ativo')
     const inputsSimulador = [
@@ -1930,6 +2014,7 @@ function setupEventListeners() {
         'inflacao-anual',
         'corrigir-aporte-inflacao',
     ]
+
     inputsSimulador.forEach((id) => {
         const element = document.getElementById(id)
         if (element) {
@@ -1940,11 +2025,9 @@ function setupEventListeners() {
                     ? 'change'
                     : 'input'
             element.addEventListener(eventType, () => {
-                clearTimeout(gTimeoutSimulacao)
-                gTimeoutSimulacao = setTimeout(() => {
-                    if (!gBloqueioRecursao) calcularSimulacaoPrincipal()
-                }, 500)
+                _atualizarEstadoBotaoSimular()
             })
+
             if (element.type === 'text' && element.inputMode === 'numeric' && !imaskInstances[id]) {
                 element.addEventListener('blur', (event) => {
                     const valorNum = parseFormattedNumber(event.target.value)
@@ -1952,10 +2035,7 @@ function setupEventListeners() {
                         minimumFractionDigits: 2,
                         maximumFractionDigits: 2,
                     })
-                    clearTimeout(gTimeoutSimulacao)
-                    gTimeoutSimulacao = setTimeout(() => {
-                        if (!gBloqueioRecursao) calcularSimulacaoPrincipal()
-                    }, 150)
+                    _atualizarEstadoBotaoSimular()
                 })
                 if (element.value) {
                     const valorNum = parseFormattedNumber(element.value)
@@ -1966,14 +2046,12 @@ function setupEventListeners() {
                 }
             } else if (element.type === 'text' && imaskInstances[id]) {
                 imaskInstances[id].on('accept', () => {
-                    clearTimeout(gTimeoutSimulacao)
-                    gTimeoutSimulacao = setTimeout(() => {
-                        if (!gBloqueioRecursao) calcularSimulacaoPrincipal()
-                    }, 500)
+                    _atualizarEstadoBotaoSimular()
                 })
             }
         }
     })
+
     document.getElementById('tipo-simulacao')?.addEventListener('change', function () {
         const tipo = this.value
         const periodoGroup = document.getElementById('periodo-container')?.closest('.input-group')
@@ -1998,8 +2076,10 @@ function setupEventListeners() {
                 metaInput.required = false
             }
             limparResultadosVisuais(false)
+            _atualizarEstadoBotaoSimular()
         }
     })
+
     document.getElementById('abrir-modal')?.addEventListener('click', abrirModalAdicaoAtivo)
     modal?.querySelectorAll('.fechar-modal').forEach((btn) => {
         btn.addEventListener('click', () => modal?.classList.remove('show'))
@@ -2011,9 +2091,16 @@ function setupEventListeners() {
         if (e.key === 'Escape' && modal?.classList.contains('show')) modal.classList.remove('show')
     })
     document.getElementById('form-ativo')?.addEventListener('submit', salvarAtivo)
+
     document.getElementById('simular-btn')?.addEventListener('click', () => {
-        if (!gBloqueioRecursao) calcularSimulacaoPrincipal()
+        const btn = document.getElementById('simular-btn')
+        if (!gBloqueioRecursao && btn && !btn.disabled) {
+            btn.disabled = true
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Calculando...'
+            calcularSimulacaoPrincipal()
+        }
     })
+
     document.getElementById('export-csv-btn')?.addEventListener('click', () => {
         if (typeof exportTableToCSV === 'function') {
             exportTableToCSV('simulation-table')
@@ -2332,6 +2419,7 @@ function onDOMContentLoaded() {
         if (!temAtivos) {
             limparResultadosVisuais(true)
         }
+        _atualizarEstadoBotaoSimular()
     } catch (error) {
         console.error('ERRO FATAL NA INICIALIZAÇÃO:', error)
         mostrarMensagemErro(`Erro grave na inicialização: ${error.message}.`)

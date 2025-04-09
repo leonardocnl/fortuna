@@ -1601,3 +1601,10 @@ body {
     opacity: 1;
     visibility: visible;
 }
+
+.button-is-disabled {
+    opacity: 0.65 !important;
+    cursor: not-allowed !important;
+    box-shadow: none !important;
+    transform: none !important;
+  }
