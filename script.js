@@ -1714,10 +1714,70 @@ function handlePriorityReorder(event) {
     }
 }
 
+function abrirModalEdicaoAtivo(index, event) {
+    event?.stopPropagation()
+    const ativos = JSON.parse(localStorage.getItem('ativos') || '[]')
+    const modal = document.getElementById('modal-ativo')
+    const form = document.getElementById('form-ativo')
+    const displayAlocacaoOutros = document.getElementById('alocacao-outros-ativos')
+
+    if (index >= 0 && index < ativos.length && modal && form && displayAlocacaoOutros) {
+        const ativo = ativos[index]
+        form.reset()
+        document
+            .querySelectorAll('#form-ativo input')
+            .forEach((input) => input.classList.remove('is-invalid'))
+        document.getElementById('ativo-nome').value = ativo.nome || ''
+        document.getElementById('ativo-index').value = index
+        ;['alocacao', 'preco', 'dividendos'].forEach((key) => {
+            const input = document.getElementById(`ativo-${key}`)
+            if (input) {
+                const valorNumerico = parseFormattedNumber(ativo[key] || '0')
+                let valorFormatado = valorNumerico.toLocaleString('pt-BR', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                })
+                input.value = valorFormatado
+                imaskInstances[`ativo-${key}`]?.updateValue()
+            }
+        })
+
+        try {
+            let somaOutros = 0
+            ativos.forEach((a, i) => {
+                if (i !== index) {
+                    somaOutros += parseFormattedNumber(a.alocacao)
+                }
+            })
+            displayAlocacaoOutros.textContent = somaOutros.toFixed(2) + '%'
+        } catch (e) {
+            console.error('Erro ao calcular alocação existente:', e)
+            displayAlocacaoOutros.textContent = 'Erro'
+        }
+
+        document.getElementById('modal-titulo').innerHTML =
+            '<i class="fas fa-edit"></i> Editar Ativo'
+        document.getElementById('modal-botao').innerHTML =
+            '<i class="fas fa-save"></i> Salvar Alterações'
+        modal.classList.add('show')
+        document.getElementById('ativo-nome')?.focus()
+    } else {
+        if (!displayAlocacaoOutros)
+            console.error('Elemento #alocacao-outros-ativos não encontrado para edição.')
+        mostrarMensagemErro('Ativo não encontrado ou erro ao abrir modal de edição.')
+    }
+}
+
 function abrirModalAdicaoAtivo() {
     const form = document.getElementById('form-ativo')
     const modal = document.getElementById('modal-ativo')
-    if (!form || !modal) return
+    const displayAlocacaoOutros = document.getElementById('alocacao-outros-ativos')
+
+    if (!form || !modal || !displayAlocacaoOutros) {
+        console.error('Elementos do modal não encontrados para adição.')
+        return
+    }
+
     form.reset()
     document.getElementById('ativo-index').value = '-1'
     document.getElementById('modal-titulo').innerHTML =
@@ -1731,40 +1791,20 @@ function abrirModalAdicaoAtivo() {
             imaskInstances[id]?.updateValue()
         }
     })
+
+    try {
+        const ativos = JSON.parse(localStorage.getItem('ativos') || '[]')
+        const somaOutros = ativos.reduce((soma, ativo) => {
+            return soma + parseFormattedNumber(ativo.alocacao)
+        }, 0)
+        displayAlocacaoOutros.textContent = somaOutros.toFixed(2) + '%'
+    } catch (e) {
+        console.error('Erro ao calcular alocação existente:', e)
+        displayAlocacaoOutros.textContent = 'Erro'
+    }
+
     modal.classList.add('show')
     document.getElementById('ativo-nome')?.focus()
-}
-
-function abrirModalEdicaoAtivo(index, event) {
-    event?.stopPropagation()
-    const ativos = JSON.parse(localStorage.getItem('ativos') || '[]')
-    const modal = document.getElementById('modal-ativo')
-    const form = document.getElementById('form-ativo')
-    if (index >= 0 && index < ativos.length && modal && form) {
-        const ativo = ativos[index]
-        form.reset()
-        document
-            .querySelectorAll('#form-ativo input')
-            .forEach((input) => input.classList.remove('is-invalid'))
-        document.getElementById('ativo-nome').value = ativo.nome || ''
-        document.getElementById('ativo-index').value = index
-        ;['alocacao', 'preco', 'dividendos'].forEach((key) => {
-            const input = document.getElementById(`ativo-${key}`)
-            if (input) {
-                const valorNumerico = parseFormattedNumber(ativo[key] || '0')
-                input.value = valorNumerico.toString().replace('.', ',')
-                imaskInstances[`ativo-${key}`]?.updateValue()
-            }
-        })
-        document.getElementById('modal-titulo').innerHTML =
-            '<i class="fas fa-edit"></i> Editar Ativo'
-        document.getElementById('modal-botao').innerHTML =
-            '<i class="fas fa-save"></i> Salvar Alterações'
-        modal.classList.add('show')
-        document.getElementById('ativo-nome')?.focus()
-    } else {
-        mostrarMensagemErro('Ativo não encontrado para edição.')
-    }
 }
 
 function salvarAtivo(event) {
@@ -1971,7 +2011,6 @@ function _atualizarEstadoBotaoSimular() {
             document.getElementById('meta-patrimonio')?.value,
         )
 
-        // --- Verificação de Aporte Adicionada ---
         const aporteInicialValor = parseFormattedNumber(
             document.getElementById('aporte-inicial')?.value,
         )
@@ -1979,12 +2018,10 @@ function _atualizarEstadoBotaoSimular() {
             document.getElementById('aporte-mensal')?.value,
         )
         const aporteOk = aporteInicialValor > 0 || aporteMensalValor > 0
-        // --- Fim Verificação de Aporte ---
 
         const periodoOk = tipoSimulacao === 'periodo' && periodoValor > 0
         const metaOk = tipoSimulacao === 'meta-patrimonio' && metaPatrimonio > 0
 
-        // --- Condição Final Atualizada (inclui aporteOk) ---
         condicoesOk = temAtivos && alocacaoOk && (periodoOk || metaOk) && aporteOk
     } catch (e) {
         console.error('Erro ao verificar condições para habilitar botão:', e)
@@ -1997,6 +2034,18 @@ function _atualizarEstadoBotaoSimular() {
         simularBtn.classList.remove('button-is-disabled')
     } else {
         simularBtn.classList.add('button-is-disabled')
+    }
+}
+
+function _atualizarDestaquePrioridade() {
+    const estrategiaSelect = document.getElementById('estrategia-reinvestimento')
+    const priorityList = document.getElementById('priority-sort-list')
+    if (!estrategiaSelect || !priorityList) return
+
+    if (estrategiaSelect.value === 'prioridade') {
+        priorityList.classList.add('prioridade-ativa')
+    } else {
+        priorityList.classList.remove('prioridade-ativa')
     }
 }
 
@@ -2026,6 +2075,9 @@ function setupEventListeners() {
                     : 'input'
             element.addEventListener(eventType, () => {
                 _atualizarEstadoBotaoSimular()
+                if (id === 'estrategia-reinvestimento') {
+                    _atualizarDestaquePrioridade()
+                }
             })
 
             if (element.type === 'text' && element.inputMode === 'numeric' && !imaskInstances[id]) {
@@ -2420,6 +2472,7 @@ function onDOMContentLoaded() {
             limparResultadosVisuais(true)
         }
         _atualizarEstadoBotaoSimular()
+        _atualizarDestaquePrioridade()
     } catch (error) {
         console.error('ERRO FATAL NA INICIALIZAÇÃO:', error)
         mostrarMensagemErro(`Erro grave na inicialização: ${error.message}.`)
