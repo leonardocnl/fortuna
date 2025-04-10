@@ -309,16 +309,32 @@ function obterInputsSimulacao() {
         custoVida: document.getElementById('custo-vida'),
         inflacaoAnual: document.getElementById('inflacao-anual'),
         corrigirAporteInflacao: document.getElementById('corrigir-aporte-inflacao'),
+        reinvestirDividendos: document.getElementById('reinvestir-dividendos'),
+        pararReinvestCondicao: document.getElementById('parar-reinvestimento-condicao'),
+        pararReinvestMes: document.getElementById('parar-reinvestimento-mes'),
     }
-    if (
-        Object.keys(formElements)
-            .filter((k) => !['inflacaoAnual', 'corrigirAporteInflacao'].includes(k))
-            .some((key) => !formElements[key])
-    ) {
-        console.error('Elementos essenciais do formulário não encontrados.')
-        mostrarMensagemErro('Erro ao ler dados do formulário.')
+
+    const essentialFields = [
+        'aporteInicial',
+        'aporteMensal',
+        'tipoSimulacao',
+        'periodoValor',
+        'periodoTipo',
+        'metaPatrimonio',
+        'custoVida',
+        'inflacaoAnual',
+        'corrigirAporteInflacao',
+        'reinvestirDividendos',
+        'pararReinvestCondicao',
+        'pararReinvestMes',
+    ]
+
+    if (essentialFields.some((key) => !formElements[key])) {
+        console.error('Um ou mais elementos essenciais do formulário não foram encontrados.')
+        mostrarMensagemErro('Erro interno ao ler dados do formulário.')
         return null
     }
+
     let ativos = []
     try {
         ativos = JSON.parse(localStorage.getItem('ativos') || '[]')
@@ -329,11 +345,11 @@ function obterInputsSimulacao() {
         localStorage.removeItem('ativos')
     }
 
-    const inflacaoAnualPerc = parseFormattedNumber(formElements.inflacaoAnual?.value)
+    const inflacaoAnualPerc = parseFormattedNumber(formElements.inflacaoAnual.value)
     const annualInflationRate = inflacaoAnualPerc / 100
 
     return {
-        aporteInicial: parseFormattedNumber(formElements.aporteInicial?.value),
+        aporteInicial: parseFormattedNumber(formElements.aporteInicial.value),
         aporteMensal: parseFormattedNumber(formElements.aporteMensal.value),
         tipoSimulacao: formElements.tipoSimulacao.value,
         periodoValor: parseInt(formElements.periodoValor.value || '0', 10),
@@ -341,7 +357,10 @@ function obterInputsSimulacao() {
         metaPatrimonio: parseFormattedNumber(formElements.metaPatrimonio.value),
         custoVida: parseFormattedNumber(formElements.custoVida.value),
         annualInflationRate: annualInflationRate,
-        corrigirAporteInflacao: formElements.corrigirAporteInflacao?.checked || false,
+        corrigirAporteInflacao: formElements.corrigirAporteInflacao.checked || false,
+        reinvestirDividendos: formElements.reinvestirDividendos.checked ?? true,
+        pararReinvestCondicao: formElements.pararReinvestCondicao.value || 'nunca',
+        pararReinvestMes: parseInt(formElements.pararReinvestMes.value || '0', 10),
         ativos: ativos,
     }
 }
@@ -416,6 +435,22 @@ function validarInputs(inputs) {
         }
     } else {
         return { isValid: false, errorMsg: 'Tipo de simulação inválido.', periodoMeses }
+    }
+
+    if (
+        inputs.reinvestirDividendos &&
+        inputs.pararReinvestCondicao === 'mes' &&
+        inputs.pararReinvestMes <= 0
+    ) {
+        return {
+            isValid: false,
+            errorMsg: 'O mês para parar de reinvestir deve ser maior que zero.',
+            periodoMeses,
+        }
+    }
+
+    if (inputs.aporteMensal < 0) {
+        return { isValid: false, errorMsg: 'O aporte mensal não pode ser negativo.', periodoMeses }
     }
 
     return { isValid: true, errorMsg: null, periodoMeses }
@@ -526,7 +561,16 @@ function _reinvestirPorDY(dinheiroDisponivel, cotasIniciais, ativos) {
     return { cotasAtualizadas, valorGasto, sobrasRestantes: dinheiroRestante }
 }
 
-function executarMesSimulacao(estadoAnterior, aporteDoMes, ativosProcessados) {
+function executarMesSimulacao(
+    estadoAnterior,
+    aporteDoMes,
+    ativosProcessados,
+    reinvestirDividendos,
+    pararReinvestCondicao,
+    pararReinvestMes,
+    mesAtual,
+    aporteMensalAtual,
+) {
     const { cotasPorAtivo: cotasMesAnterior, dinheiroOciosoMes: ociosoAnterior } = estadoAnterior
     const aporteMensal = Number(aporteDoMes) || 0
     const ociosoMesAnterior = Number(ociosoAnterior) || 0
@@ -563,13 +607,19 @@ function executarMesSimulacao(estadoAnterior, aporteDoMes, ativosProcessados) {
     const sobrasFase1 = resultadoFase1.sobrasFase1
 
     let resultadoReinvestimento
-    if (sobrasFase1 >= menorPrecoGeral) {
-        resultadoReinvestimento = _reinvestirPorDY(sobrasFase1, cotasAposFase1, ativosProcessados)
+    const poolReinvestimentoFase2 = sobrasFase1
+
+    if (poolReinvestimentoFase2 >= menorPrecoGeral) {
+        resultadoReinvestimento = _reinvestirPorDY(
+            poolReinvestimentoFase2,
+            cotasAposFase1,
+            ativosProcessados,
+        )
     } else {
         resultadoReinvestimento = {
             cotasAtualizadas: cotasAposFase1,
             valorGasto: 0,
-            sobrasRestantes: sobrasFase1,
+            sobrasRestantes: poolReinvestimentoFase2,
         }
     }
 
@@ -579,9 +629,26 @@ function executarMesSimulacao(estadoAnterior, aporteDoMes, ativosProcessados) {
     )
     const sobrasFinaisFase2 = resultadoReinvestimento.sobrasRestantes
 
-    const dinheiroOciosoFinalCalculado = arredondarParaMoeda(
-        sobrasFinaisFase2 + ociosoMesAnterior + dividendosRecebidos,
-    )
+    let reinvestirEsteMes = reinvestirDividendos
+    if (reinvestirEsteMes && pararReinvestCondicao === 'mes' && mesAtual >= pararReinvestMes) {
+        reinvestirEsteMes = false
+    }
+    if (
+        reinvestirEsteMes &&
+        pararReinvestCondicao === 'aporte' &&
+        arredondarParaMoeda(dividendosRecebidos) >= arredondarParaMoeda(aporteMensalAtual)
+    ) {
+        reinvestirEsteMes = false
+    }
+
+    let dinheiroOciosoFinalCalculado
+    if (reinvestirEsteMes) {
+        dinheiroOciosoFinalCalculado = arredondarParaMoeda(
+            sobrasFinaisFase2 + ociosoMesAnterior + dividendosRecebidos,
+        )
+    } else {
+        dinheiroOciosoFinalCalculado = arredondarParaMoeda(sobrasFinaisFase2 + ociosoMesAnterior)
+    }
 
     const dividendosGeradosParaProximoMes = arredondarParaMoeda(
         cotasFinaisMes.reduce((soma, qtd, index) => {
@@ -608,20 +675,24 @@ function executarMesSimulacao(estadoAnterior, aporteDoMes, ativosProcessados) {
 
 function calcularInvestimentoInicial(
     aporteInicial,
-    ativosProcessadosPrioridade,
-    estrategiaReinvestimento,
-    annualInflationRate,
+    ativosProcessados,
+    reinvestirDividendos,
+    pararReinvestCondicao,
+    pararReinvestMes,
 ) {
     const estadoZero = {
-        cotasPorAtivo: ativosProcessadosPrioridade.map(() => 0),
+        cotasPorAtivo: ativosProcessados.map(() => 0),
         dinheiroOciosoMes: 0,
     }
     const resultadoMesZero = executarMesSimulacao(
         estadoZero,
         aporteInicial,
-        ativosProcessadosPrioridade,
-        estrategiaReinvestimento,
-        annualInflationRate,
+        ativosProcessados,
+        reinvestirDividendos,
+        pararReinvestCondicao,
+        pararReinvestMes,
+        0,
+        aporteInicial,
     )
     return {
         cotasPorAtivo: resultadoMesZero.novasCotas,
@@ -674,17 +745,20 @@ function executarCicloSimulacao(params) {
         periodoMeses,
         metaPatrimonio,
         custoVida,
-        estrategiaReinvestimento,
         annualInflationRate,
         corrigirAporteInflacao,
+        reinvestirDividendos,
+        pararReinvestCondicao,
+        pararReinvestMes,
         ativosProcessadosPrioridade,
     } = params
 
     const estadoInicial = calcularInvestimentoInicial(
         aporteInicial,
         ativosProcessadosPrioridade,
-        estrategiaReinvestimento,
-        annualInflationRate,
+        reinvestirDividendos,
+        pararReinvestCondicao,
+        pararReinvestMes,
     )
 
     historicoGlobal = {
@@ -727,7 +801,11 @@ function executarCicloSimulacao(params) {
             estadoAtual,
             aporteDoMesArredondado,
             ativosProcessadosPrioridade,
-            estrategiaReinvestimento,
+            reinvestirDividendos,
+            pararReinvestCondicao,
+            pararReinvestMes,
+            mes,
+            aporteDoMesArredondado,
         )
 
         estadoAtual = {
@@ -782,6 +860,10 @@ function executarCicloSimulacao(params) {
         metaPatrimonioOriginal: tipoSimulacao === 'meta-patrimonio' ? metaPatrimonio : undefined,
         annualInflationRate: annualInflationRate,
         corrigirAporteInflacao: corrigirAporteInflacao,
+
+        reinvestirDividendos: reinvestirDividendos,
+        pararReinvestCondicao: pararReinvestCondicao,
+        pararReinvestMes: pararReinvestMes,
     }
     return { historico: historicoGlobal, dadosFinais }
 }
@@ -1455,14 +1537,14 @@ function atualizarListaAtivos() {
     listEl.querySelectorAll('.ativo-item').forEach((el) => el.remove())
     if (priorityListEl) {
         priorityListEl.innerHTML = ''
-    } // Limpa lista de prioridade se ainda existir no HTML
+    }
     let somaAlocacoes = 0
 
     if (ativosLS.length === 0) {
         if (placeholder) placeholder.style.display = 'flex'
         if (priorityListEl) {
             priorityListEl.innerHTML = '<li class="priority-placeholder">Adicione ativos.</li>'
-        } // Atualiza placeholder se existir
+        }
         if (gSortableInstance) {
             gSortableInstance.destroy()
             gSortableInstance = null
@@ -1539,6 +1621,28 @@ function atualizarListaAtivos() {
 
     _atualizarEstadoBotaoSimular()
     clearTimeout(gTimeoutSimulacao)
+}
+
+function _atualizarVisibilidadeOpcoesReinvestimento() {
+    const reinvestirCheckbox = document.getElementById('reinvestir-dividendos')
+    const opcoesDiv = document.getElementById('parar-reinvestimento-opcoes')
+    const condicaoSelect = document.getElementById('parar-reinvestimento-condicao')
+    const mesContainer = document.getElementById('parar-mes-container')
+
+    if (!reinvestirCheckbox || !opcoesDiv || !condicaoSelect || !mesContainer) {
+        console.error('Elementos das opções de reinvestimento não encontrados.')
+        return
+    }
+
+    const deveMostrarOpcoes = reinvestirCheckbox.checked
+    opcoesDiv.style.display = deveMostrarOpcoes ? 'block' : 'none'
+
+    if (deveMostrarOpcoes) {
+        const deveMostrarMes = condicaoSelect.value === 'mes'
+        mesContainer.style.display = deveMostrarMes ? 'block' : 'none'
+    } else {
+        mesContainer.style.display = 'none'
+    }
 }
 
 function abrirModalEdicaoAtivo(index, event) {
@@ -1903,6 +2007,9 @@ function setupEventListeners() {
         'tipo-simulacao',
         'inflacao-anual',
         'corrigir-aporte-inflacao',
+        'reinvestir-dividendos',
+        'parar-reinvestimento-condicao',
+        'parar-reinvestimento-mes',
     ]
 
     inputsSimulador.forEach((id) => {
@@ -1941,6 +2048,13 @@ function setupEventListeners() {
             }
         }
     })
+
+    document
+        .getElementById('reinvestir-dividendos')
+        ?.addEventListener('change', _atualizarVisibilidadeOpcoesReinvestimento)
+    document
+        .getElementById('parar-reinvestimento-condicao')
+        ?.addEventListener('change', _atualizarVisibilidadeOpcoesReinvestimento)
 
     document.getElementById('tipo-simulacao')?.addEventListener('change', function () {
         const tipo = this.value
@@ -1981,6 +2095,7 @@ function setupEventListeners() {
         if (e.key === 'Escape' && modal?.classList.contains('show')) modal.classList.remove('show')
     })
     document.getElementById('form-ativo')?.addEventListener('submit', salvarAtivo)
+
     document.getElementById('simular-btn')?.addEventListener('click', () => {
         const btn = document.getElementById('simular-btn')
         if (!gBloqueioRecursao && btn && !btn.disabled) {
@@ -1989,6 +2104,7 @@ function setupEventListeners() {
             calcularSimulacaoPrincipal()
         }
     })
+
     document.getElementById('export-csv-btn')?.addEventListener('click', () => {
         if (typeof exportTableToCSV === 'function') {
             exportTableToCSV('simulation-table')
@@ -2143,7 +2259,7 @@ function _aplicarDadosFormulario(dadosCenario) {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2,
                 })
-            } else if (isPercent || id === 'inflacao-anual') {
+            } else if (isPercent || id === 'inflacao-anual' || id === 'ativo-valorizacao') {
                 formattedValue = value.toLocaleString('pt-BR', {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2,
@@ -2151,12 +2267,14 @@ function _aplicarDadosFormulario(dadosCenario) {
             } else {
                 formattedValue = value.toString()
             }
+        } else if (value === null || typeof value === 'undefined') {
+            formattedValue = ''
         }
         element.value = formattedValue
 
         if (imaskInstances[id]) {
-            imaskInstances[id].value = formattedValue
-        } else if (element.inputMode === 'numeric') {
+            imaskInstances[id].value = element.value
+        } else if (element.inputMode === 'numeric' && id !== 'periodo-valor') {
             try {
                 const num = parseFormattedNumber(formattedValue)
                 if (
@@ -2196,6 +2314,9 @@ function _aplicarDadosFormulario(dadosCenario) {
     setSelectValue('periodo-tipo', dadosCenario.periodoTipo)
     setInputValue('meta-patrimonio', dadosCenario.metaPatrimonio)
     setInputValue('custo-vida', dadosCenario.custoVida)
+    setChecked('reinvestir-dividendos', dadosCenario.reinvestirDividendos ?? true)
+    setSelectValue('parar-reinvestimento-condicao', dadosCenario.pararReinvestCondicao || 'nunca')
+    setInputValue('parar-reinvestimento-mes', dadosCenario.pararReinvestMes || '')
 
     try {
         localStorage.setItem('ativos', JSON.stringify(dadosCenario.ativos || []))
@@ -2211,6 +2332,7 @@ function _aplicarDadosFormulario(dadosCenario) {
     }
     limparResultadosVisuais(true)
     _atualizarEstadoBotaoSimular()
+    _atualizarVisibilidadeOpcoesReinvestimento()
 }
 
 function handleSalvarCenario() {
@@ -2306,6 +2428,7 @@ function onDOMContentLoaded() {
         if (!temAtivos) {
             limparResultadosVisuais(true)
         }
+        _atualizarVisibilidadeOpcoesReinvestimento()
         _atualizarEstadoBotaoSimular()
     } catch (error) {
         console.error('ERRO FATAL NA INICIALIZAÇÃO:', error)

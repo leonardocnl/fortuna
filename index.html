@@ -139,128 +139,29 @@
                     </div>
                     <div class="card-body">
                         <div class="form-grid">
+
                             <div class="input-group">
-                                <label for="tipo-simulacao"
-                                    ><i class="fas fa-exchange-alt"></i> Tipo de Simulação</label
-                                >
+                                <label for="tipo-simulacao"><i class="fas fa-exchange-alt"></i> Tipo de Simulação</label>
                                 <select id="tipo-simulacao" name="tipo-simulacao">
                                     <option value="periodo" selected>Simular por Período</option>
-                                    <option value="meta-patrimonio">
-                                        Atingir Meta de Patrimônio
-                                    </option>
+                                    <option value="meta-patrimonio">Atingir Meta de Patrimônio</option>
                                 </select>
                             </div>
 
                             <div class="input-group">
-                                <label for="aporte-inicial"
-                                    ><i class="fas fa-coins"></i> Aporte Inicial (R$):</label
-                                >
-                                <input
-                                    type="text"
-                                    id="aporte-inicial"
-                                    inputmode="numeric"
-                                    placeholder="0,00"
-                                />
+                                <label for="aporte-inicial"><i class="fas fa-coins"></i> Aporte Inicial (R$):</label>
+                                <input type="text" id="aporte-inicial" inputmode="numeric" placeholder="0,00" />
                             </div>
 
                             <div class="input-group">
-                                <label for="aporte-mensal"
-                                    ><i class="fas fa-wallet"></i> Aporte Mensal (R$):</label
-                                >
-                                <input
-                                    type="text"
-                                    id="aporte-mensal"
-                                    inputmode="numeric"
-                                    placeholder="Ex: 1000,00"
-                                    required
-                                />
-                            </div>
-
-                            <div class="input-group checkbox-group">
-                                <div style="display: flex; align-items: center; gap: 0.5rem">
-                                    <input
-                                        type="checkbox"
-                                        id="corrigir-aporte-inflacao"
-                                        name="corrigir-aporte-inflacao"
-                                        value="true"
-                                        style="width: auto"
-                                    />
-                                    <label for="corrigir-aporte-inflacao" style="margin-bottom: 0">
-                                        Corrigir Aporte Mensal pela Inflação?
-                                        <i
-                                            class="fas fa-question-circle tooltip-trigger"
-                                            data-tooltip="Se marcado, o valor do aporte mensal informado será aumentado anualmente pela taxa de inflação estimada."
-                                        ></i>
-                                    </label>
-                                </div>
-                                <small
-                                    class="input-help"
-                                    style="margin-left: calc(1.1em + 0.4rem + 0.5rem)"
-                                    >Se marcado, o aporte mensal aumenta com a inflação estimada
-                                    abaixo.</small
-                                >
-                            </div>
-
-                            <div class="input-group">
-                                <label for="inflacao-anual"
-                                    ><i class="fas fa-chart-line"></i> Inflação Anual Estimada (%)
-                                    <i
-                                        class="fas fa-question-circle tooltip-trigger"
-                                        data-tooltip="Usada para calcular o valor 'real' (poder de compra) dos resultados e metas, e opcionalmente para corrigir o aporte mensal. Informe a taxa anual."
-                                    ></i
-                                ></label>
-                                <input
-                                    type="text"
-                                    id="inflacao-anual"
-                                    name="inflacao-anual"
-                                    inputmode="numeric"
-                                    placeholder="0,00"
-                                />
-                                <small class="input-help"
-                                    >Opcional (padrão 0%). Corrige metas e resultados para poder de
-                                    compra.</small
-                                >
-                            </div>
-
-                            <div
-                                class="input-group"
-                                id="meta-patrimonio-container"
-                                style="display: none"
-                            >
-                                <label for="meta-patrimonio"
-                                    ><i class="fas fa-bullseye"></i> Meta de Patrimônio Total (R$)
-                                    (Valor de Hoje)
-                                    <i
-                                        class="fas fa-question-circle tooltip-trigger"
-                                        data-tooltip="Informe o valor desejado em poder de compra atual. A simulação corrigirá automaticamente esta meta pela inflação ao longo do tempo."
-                                    ></i
-                                ></label>
-                                <input
-                                    type="text"
-                                    id="meta-patrimonio"
-                                    inputmode="numeric"
-                                    placeholder="Ex: 1000000,00"
-                                />
-                                <small class="input-help"
-                                    >Este valor será corrigido pela inflação durante a
-                                    simulação.</small
-                                >
+                                <label for="aporte-mensal"><i class="fas fa-wallet"></i> Aporte Mensal (R$):</label>
+                                <input type="text" id="aporte-mensal" inputmode="numeric" placeholder="Ex: 1000,00" required />
                             </div>
 
                             <div class="input-group" id="periodo-container">
-                                <label for="periodo-valor"
-                                    ><i class="fas fa-calendar-alt"></i> Período da Simulação</label
-                                >
+                                <label for="periodo-valor"><i class="fas fa-calendar-alt"></i> Período da Simulação</label>
                                 <div class="periodo-container">
-                                    <input
-                                        type="number"
-                                        id="periodo-valor"
-                                        name="periodo-valor"
-                                        placeholder="Ex: 10"
-                                        min="1"
-                                        step="1"
-                                        required
-                                    />
+                                    <input type="number" id="periodo-valor" name="periodo-valor" placeholder="Ex: 10" min="1" step="1" required />
                                     <select id="periodo-tipo" name="periodo-tipo">
                                         <option value="anos" selected>Anos</option>
                                         <option value="meses">Meses</option>
@@ -268,26 +169,72 @@
                                 </div>
                             </div>
 
-                            <div class="input-group" id="custo-vida-container">
-                                <label for="custo-vida"
-                                    ><i class="fas fa-home"></i> Custo de Vida Mensal Desejado (R$)
-                                    (Valor de Hoje)
-                                    <i
-                                        class="fas fa-question-circle tooltip-trigger"
-                                        data-tooltip="Opcional. Usado para estimar quando os dividendos mensais (corrigidos pela inflação) cobrirão este custo (também corrigido)."
-                                    ></i
-                                ></label>
-                                <input
-                                    type="text"
-                                    id="custo-vida"
-                                    inputmode="numeric"
-                                    placeholder="Ex: 3000,00"
-                                />
-                                <small class="input-help"
-                                    >Opcional. Será corrigido pela inflação para estimar quando
-                                    viver de renda.</small
-                                >
+                            <div class="input-group" id="meta-patrimonio-container" style="display: none">
+                                <label for="meta-patrimonio">
+                                    <i class="fas fa-bullseye"></i> Meta de Patrimônio Total (R$) (Valor de Hoje)
+                                    <i class="fas fa-question-circle tooltip-trigger" data-tooltip="Informe o valor desejado em poder de compra atual. A simulação corrigirá automaticamente esta meta pela inflação ao longo do tempo."></i>
+                                </label>
+                                <input type="text" id="meta-patrimonio" inputmode="numeric" placeholder="Ex: 1000000,00" />
+                                <small class="input-help">Este valor será corrigido pela inflação durante a simulação.</small>
                             </div>
+
+                            <div class="input-group">
+                                <label for="inflacao-anual">
+                                    <i class="fas fa-chart-line"></i> Inflação Anual Estimada (%)
+                                    <i class="fas fa-question-circle tooltip-trigger" data-tooltip="Usada para calcular o valor 'real' (poder de compra) dos resultados e metas, e opcionalmente para corrigir o aporte mensal. Informe a taxa anual."></i>
+                                </label>
+                                <input type="text" id="inflacao-anual" name="inflacao-anual" inputmode="numeric" placeholder="0,00" />
+                                <small class="input-help">Opcional (padrão 0%). Corrige metas e resultados para poder de compra.</small>
+                            </div>
+
+                            <div class="input-group checkbox-group">
+                                <div style="display: flex; align-items: center; gap: 0.5rem">
+                                    <input type="checkbox" id="corrigir-aporte-inflacao" name="corrigir-aporte-inflacao" value="true" style="width: auto;" />
+                                    <label for="corrigir-aporte-inflacao" style="margin-bottom: 0">
+                                        Corrigir Aporte Mensal pela Inflação?
+                                        <i class="fas fa-question-circle tooltip-trigger" data-tooltip="Se marcado, o valor do aporte mensal informado será aumentado anualmente pela taxa de inflação estimada."></i>
+                                    </label>
+                                </div>
+                                <small class="input-help" style="margin-left: calc(1.1em + 0.4rem + 0.5rem)">Se marcado, o aporte mensal aumenta com a inflação estimada acima.</small>
+                            </div>
+
+                            <div class="input-group checkbox-group">
+                                <div style="display: flex; align-items: center; gap: 0.5rem">
+                                    <input type="checkbox" id="reinvestir-dividendos" name="reinvestir-dividendos" value="true" checked style="width: auto;">
+                                    <label for="reinvestir-dividendos" style="margin-bottom: 0;">
+                                        Reinvestir Dividendos Recebidos?
+                                        <i class="fas fa-question-circle tooltip-trigger" data-tooltip="Se marcado, os dividendos recebidos entram no cálculo para comprar mais ativos (conforme condição abaixo). Se desmarcado, acumulam como dinheiro ocioso."></i>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div id="parar-reinvestimento-opcoes" style="display: block;">
+                                <div class="input-group">
+                                    <label for="parar-reinvestimento-condicao"><i class="fas fa-stop-circle"></i> Parar de Reinvestir Dividendos Quando:</label>
+                                    <select id="parar-reinvestimento-condicao" name="parar-reinvestimento-condicao">
+                                        <option value="nunca" selected>Nunca Parar (Padrão)</option>
+                                        <option value="mes">Atingir Mês Específico</option>
+                                        <option value="aporte">Valor do Dividendo Mensal supera o valor do Aporte Mensal</option>
+                                    </select>
+                                    <small class="input-help">Condição opcional para interromper o reinvestimento automático dos dividendos.</small>
+                                </div>
+
+                                <div class="input-group" id="parar-mes-container" style="display: none;">
+                                    <label for="parar-reinvestimento-mes"><i class="fas fa-calendar-times"></i> Parar Reinvestimento no Mês:</label>
+                                    <input type="number" id="parar-reinvestimento-mes" name="parar-reinvestimento-mes" placeholder="Ex: 120" min="1" step="1">
+                                    <small class="input-help">Informe o número do mês em que o reinvestimento de dividendos deve parar.</small>
+                                </div>
+                            </div>
+
+                             <div class="input-group" id="custo-vida-container">
+                                <label for="custo-vida">
+                                    <i class="fas fa-home"></i> Custo de Vida Mensal Desejado (R$) (Valor de Hoje)
+                                    <i class="fas fa-question-circle tooltip-trigger" data-tooltip="Opcional. Usado para estimar quando os dividendos mensais (corrigidos pela inflação) cobrirão este custo (também corrigido)."></i>
+                                </label>
+                                <input type="text" id="custo-vida" inputmode="numeric" placeholder="Ex: 3000,00" />
+                                <small class="input-help">Opcional. Será corrigido pela inflação para estimar quando viver de renda.</small>
+                            </div>
+
                         </div>
 
                         <div
@@ -603,19 +550,53 @@
                             <legend class="fieldset-legend">Características do Ativo</legend>
                             <div class="form-row">
                                 <div class="input-group">
-                                    <label for="ativo-preco"><i class="fas fa-dollar-sign"></i> Preço Unitário (R$):</label>
-                                    <input type="text" inputmode="numeric" id="ativo-preco" name="ativo-preco" placeholder="Ex: 10,50" required />
+                                    <label for="ativo-preco"
+                                        ><i class="fas fa-dollar-sign"></i> Preço Unitário
+                                        (R$):</label
+                                    >
+                                    <input
+                                        type="text"
+                                        inputmode="numeric"
+                                        id="ativo-preco"
+                                        name="ativo-preco"
+                                        placeholder="Ex: 10,50"
+                                        required
+                                    />
                                 </div>
                                 <div class="input-group">
-                                    <label for="ativo-dividendos"><i class="fas fa-hand-holding-usd"></i> Dividendo Mensal / Cota (R$):</label>
-                                    <input type="text" inputmode="numeric" id="ativo-dividendos" name="ativo-dividendos" required placeholder="Ex: 0,11" />
-                                    <small class="input-help">Último rendimento ou estimativa mensal.</small>
+                                    <label for="ativo-dividendos"
+                                        ><i class="fas fa-hand-holding-usd"></i> Dividendo Mensal /
+                                        Cota (R$):</label
+                                    >
+                                    <input
+                                        type="text"
+                                        inputmode="numeric"
+                                        id="ativo-dividendos"
+                                        name="ativo-dividendos"
+                                        required
+                                        placeholder="Ex: 0,11"
+                                    />
+                                    <small class="input-help"
+                                        >Último rendimento ou estimativa mensal.</small
+                                    >
                                 </div>
                             </div>
-                            <div class="input-group" style="margin-top: 1rem;">
-                                <label for="ativo-valorizacao"><i class="fas fa-arrow-trend-up"></i> Valorização Anual Estimada (%):</label>
-                                <input type="text" inputmode="numeric" id="ativo-valorizacao" name="ativo-valorizacao" placeholder="Ex: 5,00 (Opcional)" />
-                                <small class="input-help">Estimativa de quanto o preço do ativo vai subir por ano. Deixe em branco ou 0 para sem valorização.</small>
+                            <div class="input-group" style="margin-top: 1rem">
+                                <label for="ativo-valorizacao"
+                                    ><i class="fas fa-arrow-trend-up"></i> Valorização Anual
+                                    Estimada (%):</label
+                                >
+                                <input
+                                    type="text"
+                                    inputmode="numeric"
+                                    id="ativo-valorizacao"
+                                    name="ativo-valorizacao"
+                                    placeholder="Ex: 5,00 (Opcional)"
+                                />
+                                <small class="input-help"
+                                    >Estimativa de quanto o preço do ativo vai subir por ano. Deixe
+                                    em branco ou 0 para sem valorização.</small
+                                >
                             </div>
                         </fieldset>
 
