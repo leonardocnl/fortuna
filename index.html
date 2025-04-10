@@ -603,36 +603,19 @@
                             <legend class="fieldset-legend">Características do Ativo</legend>
                             <div class="form-row">
                                 <div class="input-group">
-                                    <label for="ativo-preco"
-                                        ><i class="fas fa-dollar-sign"></i> Preço Unitário
-                                        (R$):</label
-                                    >
-                                    <input
-                                        type="text"
-                                        inputmode="numeric"
-                                        id="ativo-preco"
-                                        name="ativo-preco"
-                                        placeholder="Ex: 10,50"
-                                        required
-                                    />
+                                    <label for="ativo-preco"><i class="fas fa-dollar-sign"></i> Preço Unitário (R$):</label>
+                                    <input type="text" inputmode="numeric" id="ativo-preco" name="ativo-preco" placeholder="Ex: 10,50" required />
                                 </div>
                                 <div class="input-group">
-                                    <label for="ativo-dividendos"
-                                        ><i class="fas fa-hand-holding-usd"></i> Dividendo Mensal /
-                                        Cota (R$):</label
-                                    >
-                                    <input
-                                        type="text"
-                                        inputmode="numeric"
-                                        id="ativo-dividendos"
-                                        name="ativo-dividendos"
-                                        required
-                                        placeholder="Ex: 0,11"
-                                    />
-                                    <small class="input-help"
-                                        >Último rendimento ou estimativa mensal.</small
-                                    >
+                                    <label for="ativo-dividendos"><i class="fas fa-hand-holding-usd"></i> Dividendo Mensal / Cota (R$):</label>
+                                    <input type="text" inputmode="numeric" id="ativo-dividendos" name="ativo-dividendos" required placeholder="Ex: 0,11" />
+                                    <small class="input-help">Último rendimento ou estimativa mensal.</small>
                                 </div>
+                            </div>
+                            <div class="input-group" style="margin-top: 1rem;">
+                                <label for="ativo-valorizacao"><i class="fas fa-arrow-trend-up"></i> Valorização Anual Estimada (%):</label>
+                                <input type="text" inputmode="numeric" id="ativo-valorizacao" name="ativo-valorizacao" placeholder="Ex: 5,00 (Opcional)" />
+                                <small class="input-help">Estimativa de quanto o preço do ativo vai subir por ano. Deixe em branco ou 0 para sem valorização.</small>
                             </div>
                         </fieldset>
 

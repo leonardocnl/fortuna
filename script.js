@@ -1556,16 +1556,16 @@ function abrirModalEdicaoAtivo(index, event) {
             .forEach((input) => input.classList.remove('is-invalid'))
         document.getElementById('ativo-nome').value = ativo.nome || ''
         document.getElementById('ativo-index').value = index
-        ;['alocacao', 'preco', 'dividendos'].forEach((key) => {
-            const input = document.getElementById(`ativo-${key}`)
+        ;['alocacao', 'preco', 'dividendos', 'valorizacaoAnual'].forEach((key) => {
+            const input = document.getElementById(`ativo-${key.toLowerCase().replace('anual', '')}`)
             if (input) {
                 const valorNumerico = parseFormattedNumber(ativo[key] || '0')
-                let valorFormatado = valorNumerico.toLocaleString('pt-BR', {
+                const valorFormatado = valorNumerico.toLocaleString('pt-BR', {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2,
                 })
                 input.value = valorFormatado
-                imaskInstances[`ativo-${key}`]?.updateValue()
+                imaskInstances[input.id]?.updateValue()
             }
         })
 
@@ -1610,7 +1610,13 @@ function abrirModalAdicaoAtivo() {
     document.getElementById('modal-titulo').innerHTML =
         '<i class="fas fa-plus-circle"></i> Adicionar Novo Ativo'
     document.getElementById('modal-botao').innerHTML = '<i class="fas fa-plus"></i> Adicionar Ativo'
-    ;['ativo-nome', 'ativo-alocacao', 'ativo-preco', 'ativo-dividendos'].forEach((id) => {
+    ;[
+        'ativo-nome',
+        'ativo-alocacao',
+        'ativo-preco',
+        'ativo-dividendos',
+        'ativo-valorizacao',
+    ].forEach((id) => {
         const input = document.getElementById(id)
         if (input) {
             input.value = ''
@@ -1641,15 +1647,21 @@ function salvarAtivo(event) {
         .forEach((input) => input.classList.remove('is-invalid'))
     const index = parseInt(document.getElementById('ativo-index')?.value ?? '-1', 10)
     const nome = document.getElementById('ativo-nome')?.value.trim() ?? ''
+
     const getValueFromMask = (elementId) => {
         const mask = imaskInstances[elementId]
-        return mask
-            ? parseFloat(mask.unmaskedValue) || 0
-            : parseFormattedNumber(document.getElementById(elementId)?.value) || 0
+        if (mask && typeof mask.unmaskedValue !== 'undefined') {
+            const parsed = parseFloat(mask.unmaskedValue.replace(',', '.'))
+            return isNaN(parsed) ? 0 : parsed
+        }
+        return parseFormattedNumber(document.getElementById(elementId)?.value) || 0
     }
+
     const alocacao = getValueFromMask('ativo-alocacao')
     const preco = getValueFromMask('ativo-preco')
     const dividendos = getValueFromMask('ativo-dividendos')
+    const valorizacao = getValueFromMask('ativo-valorizacao')
+
     let isValid = true
     if (!nome) {
         mostrarMensagemErro('Nome é obrigatório.')
@@ -1666,17 +1678,25 @@ function salvarAtivo(event) {
         document.getElementById('ativo-dividendos')?.classList.add('is-invalid')
         isValid = false
     }
+    if (isNaN(valorizacao)) {
+        mostrarMensagemErro('Valorização Anual inválida.')
+        document.getElementById('ativo-valorizacao')?.classList.add('is-invalid')
+        isValid = false
+    }
     if (isNaN(alocacao) || alocacao <= 0 || alocacao > 100) {
         mostrarMensagemErro('Alocação inválida (0.01% a 100%).')
         document.getElementById('ativo-alocacao')?.classList.add('is-invalid')
         isValid = false
     }
+
     if (!isValid) return
+
     const ativos = JSON.parse(localStorage.getItem('ativos') || '[]')
     const alocacaoAtualSemItemEditado = ativos.reduce((soma, ativo, i) => {
         return index !== -1 && i === index ? soma : soma + parseFormattedNumber(ativo.alocacao)
     }, 0)
     const novaSomaTotal = arredondarParaMoeda(alocacaoAtualSemItemEditado + alocacao)
+
     if (novaSomaTotal > 100.005) {
         mostrarMensagemErro(
             `Alocação total excederia 100% (${novaSomaTotal.toFixed(2)}%). Ajuste as alocações.`,
@@ -1684,25 +1704,20 @@ function salvarAtivo(event) {
         document.getElementById('ativo-alocacao')?.classList.add('is-invalid')
         return
     }
+
+    const formatOptions = { minimumFractionDigits: 2, maximumFractionDigits: 2 }
     const ativoSalvar = {
         nome: nome,
-        alocacao: alocacao.toLocaleString('pt-BR', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-        }),
-        preco: preco.toLocaleString('pt-BR', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-        }),
-        dividendos: dividendos.toLocaleString('pt-BR', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-        }),
+        alocacao: alocacao.toLocaleString('pt-BR', formatOptions),
+        preco: preco.toLocaleString('pt-BR', formatOptions),
+        dividendos: dividendos.toLocaleString('pt-BR', formatOptions),
+        valorizacaoAnual: valorizacao.toLocaleString('pt-BR', formatOptions),
         prioridade:
             index === -1
                 ? (ativos.length + 1).toString()
                 : ativos[index]?.prioridade || (ativos.length + 1).toString(),
     }
+
     if (index === -1) {
         ativos.push(ativoSalvar)
         mostrarMensagemSucesso(`Ativo "${nome}" adicionado!`)
@@ -1716,6 +1731,7 @@ function salvarAtivo(event) {
             return
         }
     }
+
     try {
         if (index === -1) {
             ativos.sort(
@@ -1764,12 +1780,18 @@ function inicializarMascarasModal() {
     }
     Object.values(imaskInstances).forEach((inst) => inst?.destroy())
     imaskInstances = {}
-    const idsComMascara = ['ativo-alocacao', 'ativo-preco', 'ativo-dividendos', 'inflacao-anual']
+    const idsComMascara = [
+        'ativo-alocacao',
+        'ativo-preco',
+        'ativo-dividendos',
+        'inflacao-anual',
+        'ativo-valorizacao',
+    ]
     idsComMascara.forEach((id) => {
         const element = document.getElementById(id)
         if (element) {
             let options
-            if (id === 'ativo-alocacao' || id === 'inflacao-anual') {
+            if (id === 'ativo-alocacao' || id === 'inflacao-anual' || id === 'ativo-valorizacao') {
                 options = {
                     mask: 'num%',
                     lazy: false,
@@ -1777,23 +1799,28 @@ function inicializarMascarasModal() {
                         num: {
                             mask: Number,
                             scale: 2,
-                            signed: false,
+                            signed: true,
                             thousandsSeparator: '',
                             padFractionalZeros: true,
                             normalizeZeros: true,
                             radix: ',',
                             mapToRadix: ['.'],
-                            min: 0,
-                            max: 100,
+                            min: -100,
+                            max: 1000,
                         },
                     },
                 }
-                if (id === 'inflacao-anual') {
-                    options.blocks.num.padFractionalZeros = true
-                    options.blocks.num.min = 0
-                } else {
-                    options.blocks.num.padFractionalZeros = false
+
+                if (id === 'ativo-alocacao') {
+                    options.blocks.num.signed = false
                     options.blocks.num.min = 0.01
+                    options.blocks.num.max = 100
+                    options.blocks.num.padFractionalZeros = false
+                }
+
+                if (id === 'inflacao-anual') {
+                    options.blocks.num.signed = false
+                    options.blocks.num.min = 0
                 }
             } else {
                 options = {
