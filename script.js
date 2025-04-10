@@ -94,7 +94,7 @@ function limparResultadosVisuais(limparGraficos = true) {
     const tblBody = document.getElementById('simulation-table')?.querySelector('tbody')
     if (tblBody) {
         tblBody.innerHTML =
-            '<tr class="placeholder-row"><td colspan="9">Calcule a simulação para ver detalhes.</td></tr>'
+            '<tr class="placeholder-row"><td colspan="7" style="text-align: center; padding: 1rem;">Os detalhes mês a mês da sua simulação aparecerão aqui após o cálculo.</td></tr>'
     }
     document.getElementById('tabela-detalhada')?.setAttribute('style', 'display: none;')
     const resDiv = document.getElementById('resultado-simulacao')
@@ -102,7 +102,9 @@ function limparResultadosVisuais(limparGraficos = true) {
         resDiv.innerHTML = ''
         resDiv.className = 'result-placeholder card-body'
         const placeholderContent = document.createElement('div')
-        placeholderContent.innerHTML = `<i class="fas fa-info-circle fa-2x" style="color: #aaa; margin-bottom: 1rem; display: block;"></i><p>Preencha os dados acima, adicione ativos (totalizando 100%) e clique em "Simular Resultados".</p>`
+        placeholderContent.innerHTML = `<i class="fas fa-info-circle fa-2x" style="color: #aaa; margin-bottom: 1rem; display: block;"></i>
+        <p>Bem-vindo(a)! Preencha os dados da simulação acima, adicione seus ativos (somando 100% de alocação)
+         e clique em "Simular Resultados" para ver as projeções aqui.</p>`
         resDiv.appendChild(placeholderContent)
         resDiv.style.minHeight = null
         resDiv.style.display = null
@@ -305,20 +307,12 @@ function obterInputsSimulacao() {
         periodoTipo: document.getElementById('periodo-tipo'),
         metaPatrimonio: document.getElementById('meta-patrimonio'),
         custoVida: document.getElementById('custo-vida'),
-        estrategiaReinvestimento: document.getElementById('estrategia-reinvestimento'),
         inflacaoAnual: document.getElementById('inflacao-anual'),
         corrigirAporteInflacao: document.getElementById('corrigir-aporte-inflacao'),
     }
     if (
         Object.keys(formElements)
-            .filter(
-                (k) =>
-                    ![
-                        'estrategiaReinvestimento',
-                        'inflacaoAnual',
-                        'corrigirAporteInflacao',
-                    ].includes(k),
-            )
+            .filter((k) => !['inflacaoAnual', 'corrigirAporteInflacao'].includes(k))
             .some((key) => !formElements[key])
     ) {
         console.error('Elementos essenciais do formulário não encontrados.')
@@ -346,7 +340,6 @@ function obterInputsSimulacao() {
         periodoTipo: formElements.periodoTipo.value,
         metaPatrimonio: parseFormattedNumber(formElements.metaPatrimonio.value),
         custoVida: parseFormattedNumber(formElements.custoVida.value),
-        estrategiaReinvestimento: formElements.estrategiaReinvestimento?.value || 'rebalancear',
         annualInflationRate: annualInflationRate,
         corrigirAporteInflacao: formElements.corrigirAporteInflacao?.checked || false,
         ativos: ativos,
@@ -355,30 +348,26 @@ function obterInputsSimulacao() {
 
 function validarInputs(inputs) {
     let periodoMeses = 0
-    if (inputs.aporteInicial < 0)
-        return {
-            isValid: false,
-            errorMsg: 'O aporte inicial não pode ser negativo.',
-            periodoMeses,
-        }
-    if (inputs.custoVida < 0)
+    if (inputs.aporteInicial < 0) {
+        return { isValid: false, errorMsg: 'O aporte inicial não pode ser negativo.', periodoMeses }
+    }
+    if (inputs.custoVida < 0) {
         return {
             isValid: false,
             errorMsg: 'O custo de vida mensal não pode ser negativo.',
             periodoMeses,
         }
-    if (inputs.annualInflationRate < 0)
-        return {
-            isValid: false,
-            errorMsg: 'A inflação anual não pode ser negativa.',
-            periodoMeses,
-        } // Valida taxa anual
-    if (!inputs.ativos || inputs.ativos.length === 0)
+    }
+    if (inputs.annualInflationRate < 0) {
+        return { isValid: false, errorMsg: 'A inflação anual não pode ser negativa.', periodoMeses }
+    }
+    if (!inputs.ativos || inputs.ativos.length === 0) {
         return {
             isValid: false,
             errorMsg: 'Adicione pelo menos um ativo para simular.',
             periodoMeses,
         }
+    }
 
     const somaAlocacoes = inputs.ativos.reduce(
         (soma, ativo) => soma + parseFormattedNumber(ativo.alocacao),
@@ -399,30 +388,24 @@ function validarInputs(inputs) {
         }
     }
 
-    if (!['prioridade', 'rebalancear'].includes(inputs.estrategiaReinvestimento)) {
-        return {
-            isValid: false,
-            errorMsg: 'Estratégia de reinvestimento selecionada é inválida.',
-            periodoMeses,
-        }
-    }
-
     if (inputs.tipoSimulacao === 'periodo') {
         periodoMeses =
             inputs.periodoTipo === 'anos' ? inputs.periodoValor * 12 : inputs.periodoValor
-        if (inputs.periodoValor <= 0 || periodoMeses <= 0)
+        if (inputs.periodoValor <= 0 || periodoMeses <= 0) {
             return {
                 isValid: false,
                 errorMsg: 'O período da simulação deve ser maior que zero.',
                 periodoMeses,
             }
+        }
     } else if (inputs.tipoSimulacao === 'meta-patrimonio') {
-        if (inputs.metaPatrimonio <= 0)
+        if (inputs.metaPatrimonio <= 0) {
             return {
                 isValid: false,
                 errorMsg: 'A meta de patrimônio deve ser maior que zero.',
                 periodoMeses,
             }
+        }
         if (inputs.aporteMensal <= 0 && inputs.aporteInicial < inputs.metaPatrimonio) {
             return {
                 isValid: false,
@@ -432,11 +415,7 @@ function validarInputs(inputs) {
             }
         }
     } else {
-        return {
-            isValid: false,
-            errorMsg: 'Tipo de simulação inválido.',
-            periodoMeses,
-        }
+        return { isValid: false, errorMsg: 'Tipo de simulação inválido.', periodoMeses }
     }
 
     return { isValid: true, errorMsg: null, periodoMeses }
@@ -506,22 +485,32 @@ function _alocarAportePrincipal(aporteMensal, ativosProcessados, cotasIniciais) 
     return { cotasAtualizadas, valorGastoFase1, sobrasFase1 }
 }
 
-function _reinvestirPorPrioridade(
-    dinheiroDisponivel,
-    cotasIniciais,
-    ativosProcessadosPrioridade,
-    menorPrecoGeral,
-) {
+function _reinvestirPorDY(dinheiroDisponivel, cotasIniciais, ativos) {
     let dinheiroRestante = dinheiroDisponivel
     let valorGasto = 0
     const cotasAtualizadas = [...cotasIniciais]
 
+    const ativosCompráveis = ativos.filter((a) => a.preco > 0)
+    if (ativosCompráveis.length === 0 || dinheiroRestante <= 0) {
+        return { cotasAtualizadas, valorGasto, sobrasRestantes: dinheiroRestante }
+    }
+
+    const menorPrecoGeral = Math.min(...ativosCompráveis.map((a) => a.preco))
     if (dinheiroRestante < menorPrecoGeral) {
         return { cotasAtualizadas, valorGasto, sobrasRestantes: dinheiroRestante }
     }
 
-    for (const ativo of ativosProcessadosPrioridade) {
-        if (ativo.preco <= 0 || dinheiroRestante < ativo.preco) continue
+    const ativosOrdenadosPorYield = [...ativosCompráveis].sort((a, b) => {
+        const yieldA = a.yieldMensal || 0
+        const yieldB = b.yieldMensal || 0
+        if (yieldB !== yieldA) {
+            return yieldB - yieldA
+        }
+        return a.preco - b.preco
+    })
+
+    for (const ativo of ativosOrdenadosPorYield) {
+        if (dinheiroRestante < ativo.preco) continue
 
         const cotasComprar = Math.floor(dinheiroRestante / ativo.preco)
         if (cotasComprar > 0) {
@@ -530,145 +519,30 @@ function _reinvestirPorPrioridade(
             valorGasto = arredondarParaMoeda(valorGasto + gastoAtivo)
             dinheiroRestante = arredondarParaMoeda(dinheiroRestante - gastoAtivo)
         }
+
         if (dinheiroRestante < menorPrecoGeral) break
     }
 
     return { cotasAtualizadas, valorGasto, sobrasRestantes: dinheiroRestante }
 }
 
-function _reinvestirPorRebalanceamento(
-    dinheiroDisponivel,
-    cotasIniciais,
-    ativosProcessadosPrioridade,
-    menorPrecoGeral,
-) {
-    let dinheiroRestante = dinheiroDisponivel
-    let valorGasto = 0
-    const cotasAtualizadas = [...cotasIniciais]
-
-    if (dinheiroRestante < menorPrecoGeral) {
-        return { cotasAtualizadas, valorGasto, sobrasRestantes: dinheiroRestante }
-    }
-
-    const patrimonioInvestidoAntesRebalanceamento = cotasAtualizadas.reduce((soma, qtd, index) => {
-        const ativo = ativosProcessadosPrioridade.find((a) => a.originalIndex === index)
-        return soma + qtd * (ativo?.preco || 0)
-    }, 0)
-
-    if (patrimonioInvestidoAntesRebalanceamento > 0) {
-        let ativosParaRebalancear = []
-        ativosProcessadosPrioridade.forEach((ativo) => {
-            if (ativo.preco <= 0) return
-            const valorAtualAtivo = cotasAtualizadas[ativo.originalIndex] * ativo.preco
-            const percentualAtual =
-                (valorAtualAtivo / patrimonioInvestidoAntesRebalanceamento) * 100
-            const percentualMeta = ativo.alocacao
-            const diferenca = percentualMeta - percentualAtual
-
-            if (diferenca > 0.01 && dinheiroRestante >= ativo.preco) {
-                ativosParaRebalancear.push({ ...ativo, diferenca: diferenca })
-            }
-        })
-
-        if (ativosParaRebalancear.length > 0) {
-            ativosParaRebalancear.sort((a, b) => {
-                if (Math.abs(b.diferenca - a.diferenca) > 0.001) {
-                    return b.diferenca - a.diferenca
-                }
-                return (b.yieldMensal || 0) - (a.yieldMensal || 0)
-            })
-
-            const targetAsset = ativosParaRebalancear[0]
-            if (dinheiroRestante >= targetAsset.preco) {
-                const cotasComprar = Math.floor(dinheiroRestante / targetAsset.preco)
-                if (cotasComprar > 0) {
-                    const gastoRebalanceio = arredondarParaMoeda(cotasComprar * targetAsset.preco)
-                    cotasAtualizadas[targetAsset.originalIndex] += cotasComprar
-                    valorGasto = arredondarParaMoeda(valorGasto + gastoRebalanceio)
-                    dinheiroRestante = arredondarParaMoeda(dinheiroRestante - gastoRebalanceio)
-                }
-            }
-        }
-    }
-
-    if (dinheiroRestante >= menorPrecoGeral) {
-        const resultadoPrioridade = _reinvestirPorPrioridade(
-            dinheiroRestante,
-            cotasAtualizadas,
-            ativosProcessadosPrioridade,
-            menorPrecoGeral,
-        )
-        valorGasto = arredondarParaMoeda(valorGasto + resultadoPrioridade.valorGasto)
-        dinheiroRestante = resultadoPrioridade.sobrasRestantes
-        resultadoPrioridade.cotasAtualizadas.forEach((qtd, index) => {
-            cotasAtualizadas[index] = qtd
-        })
-    }
-
-    return { cotasAtualizadas, valorGasto, sobrasRestantes: dinheiroRestante }
-}
-
-function _reinvestirFundos(
-    poolReinvestimento,
-    cotasIniciais,
-    ativosProcessadosPrioridade,
-    estrategiaReinvestimento,
-    menorPrecoGeral,
-) {
-    if (poolReinvestimento < menorPrecoGeral) {
-        return {
-            cotasAtualizadas: [...cotasIniciais],
-            valorGastoFase2: 0,
-            sobrasFinais: poolReinvestimento,
-        }
-    }
-
-    let resultadoReinvestimento
-    if (estrategiaReinvestimento === 'rebalancear') {
-        resultadoReinvestimento = _reinvestirPorRebalanceamento(
-            poolReinvestimento,
-            cotasIniciais,
-            ativosProcessadosPrioridade,
-            menorPrecoGeral,
-        )
-    } else {
-        resultadoReinvestimento = _reinvestirPorPrioridade(
-            poolReinvestimento,
-            cotasIniciais,
-            ativosProcessadosPrioridade,
-            menorPrecoGeral,
-        )
-    }
-
-    return {
-        cotasAtualizadas: resultadoReinvestimento.cotasAtualizadas,
-        valorGastoFase2: resultadoReinvestimento.valorGasto,
-        sobrasFinais: resultadoReinvestimento.sobrasRestantes,
-    }
-}
-
-function executarMesSimulacao(
-    estadoAnterior,
-    aporteDoMes,
-    ativosProcessadosPrioridade,
-    estrategiaReinvestimento,
-) {
+function executarMesSimulacao(estadoAnterior, aporteDoMes, ativosProcessados) {
     const { cotasPorAtivo: cotasMesAnterior, dinheiroOciosoMes: ociosoAnterior } = estadoAnterior
     const aporteMensal = Number(aporteDoMes) || 0
     const ociosoMesAnterior = Number(ociosoAnterior) || 0
 
     const dividendosRecebidos = arredondarParaMoeda(
         cotasMesAnterior.reduce((soma, qtd, index) => {
-            const ativo = ativosProcessadosPrioridade.find((a) => a.originalIndex === index)
+            const ativo = ativosProcessados.find((a) => a.originalIndex === index)
             return soma + qtd * (ativo?.dividendos || 0)
         }, 0),
     )
 
-    const ativosCompráveis = ativosProcessadosPrioridade.filter((a) => a.preco > 0)
+    const ativosCompráveis = ativosProcessados.filter((a) => a.preco > 0)
     if (ativosCompráveis.length === 0) {
         const patrimonioInvestidoMes = arredondarParaMoeda(
             cotasMesAnterior.reduce((s, q, i) => {
-                const a = ativosProcessadosPrioridade.find((at) => at.originalIndex === i)
+                const a = ativosProcessados.find((at) => at.originalIndex === i)
                 return s + q * (a?.preco || 0)
             }, 0),
         )
@@ -683,48 +557,49 @@ function executarMesSimulacao(
     }
     const menorPrecoGeral = Math.min(...ativosCompráveis.map((a) => a.preco))
 
-    const resultadoFase1 = _alocarAportePrincipal(
-        aporteMensal,
-        ativosProcessadosPrioridade,
-        cotasMesAnterior,
-    )
+    const resultadoFase1 = _alocarAportePrincipal(aporteMensal, ativosProcessados, cotasMesAnterior)
     let cotasAposFase1 = resultadoFase1.cotasAtualizadas
     let valorInvestidoEsteMes = resultadoFase1.valorGastoFase1
+    const sobrasFase1 = resultadoFase1.sobrasFase1
 
-    const poolReinvestimento = arredondarParaMoeda(
-        resultadoFase1.sobrasFase1 + dividendosRecebidos + ociosoMesAnterior,
-    )
+    let resultadoReinvestimento
+    if (sobrasFase1 >= menorPrecoGeral) {
+        resultadoReinvestimento = _reinvestirPorDY(sobrasFase1, cotasAposFase1, ativosProcessados)
+    } else {
+        resultadoReinvestimento = {
+            cotasAtualizadas: cotasAposFase1,
+            valorGasto: 0,
+            sobrasRestantes: sobrasFase1,
+        }
+    }
 
-    const resultadoFase2 = _reinvestirFundos(
-        poolReinvestimento,
-        cotasAposFase1,
-        ativosProcessadosPrioridade,
-        estrategiaReinvestimento,
-        menorPrecoGeral,
-    )
-    const cotasFinaisMes = resultadoFase2.cotasAtualizadas
+    const cotasFinaisMes = resultadoReinvestimento.cotasAtualizadas
     valorInvestidoEsteMes = arredondarParaMoeda(
-        valorInvestidoEsteMes + resultadoFase2.valorGastoFase2,
+        valorInvestidoEsteMes + resultadoReinvestimento.valorGasto,
     )
-    const sobrasFinaisMes = resultadoFase2.sobrasFinais
+    const sobrasFinaisFase2 = resultadoReinvestimento.sobrasRestantes
+
+    const dinheiroOciosoFinalCalculado = arredondarParaMoeda(
+        sobrasFinaisFase2 + ociosoMesAnterior + dividendosRecebidos,
+    )
 
     const dividendosGeradosParaProximoMes = arredondarParaMoeda(
         cotasFinaisMes.reduce((soma, qtd, index) => {
-            const ativo = ativosProcessadosPrioridade.find((a) => a.originalIndex === index)
+            const ativo = ativosProcessados.find((a) => a.originalIndex === index)
             return soma + qtd * (ativo?.dividendos || 0)
         }, 0),
     )
 
     const patrimonioInvestidoMes = arredondarParaMoeda(
         cotasFinaisMes.reduce((s, q, i) => {
-            const a = ativosProcessadosPrioridade.find((at) => at.originalIndex === i)
+            const a = ativosProcessados.find((at) => at.originalIndex === i)
             return s + q * (a?.preco || 0)
         }, 0),
     )
 
     return {
         novasCotas: cotasFinaisMes,
-        dinheiroOciosoFinal: sobrasFinaisMes,
+        dinheiroOciosoFinal: dinheiroOciosoFinalCalculado,
         dividendosMes: dividendosGeradosParaProximoMes,
         investidoMes: valorInvestidoEsteMes,
         patrimonioInvestidoMes: patrimonioInvestidoMes,
@@ -1099,6 +974,7 @@ function generateSummaryHtml(dadosFinais, metricas, historico, inputs) {
         tipoSimulacao,
         metaPatrimonioOriginal,
         annualInflationRate,
+        dividendosUltimoMes,
     } = dadosFinais
     const {
         mesParaViverDeRenda,
@@ -1110,19 +986,21 @@ function generateSummaryHtml(dadosFinais, metricas, historico, inputs) {
         custoVidaFinalCorrigido,
         totalAportadoFinal,
     } = metricas
-    const { dividendosUltimoMes } = dadosFinais
+
+    const inflacaoAtiva = annualInflationRate > 0
+    const tooltipValorReal = inflacaoAtiva
+        ? ' <i class="fas fa-question-circle tooltip-trigger" data-tooltip="Valor \'Real\' representa o poder de compra futuro ajustado pela inflação estimada, equivalente ao valor de hoje."></i>'
+        : ''
+    const inflacaoInfo = inflacaoAtiva
+        ? ` (Inflação ${(annualInflationRate * 100).toFixed(1)}% a.a.)`
+        : ''
+    const valorRealTitle = inflacaoAtiva
+        ? `Valor nominal no futuro / Valor real em poder de compra de hoje`
+        : ''
+    const aporteCorrigidoInfo =
+        inputs.corrigirAporteInflacao && inflacaoAtiva ? '(Aportes corrigidos p/ Inflação)' : ''
 
     let resultadosItems = []
-    const inflacaoInfo =
-        annualInflationRate > 0 ? ` (Inflação ${(annualInflationRate * 100).toFixed(1)}% a.a.)` : ''
-    const valorRealTitle =
-        annualInflationRate > 0
-            ? `Valor nominal no futuro / Valor real em poder de compra de hoje`
-            : ''
-    const aporteCorrigidoInfo =
-        inputs.corrigirAporteInflacao && annualInflationRate > 0
-            ? '(Aportes corrigidos p/ Inflação)'
-            : ''
 
     if (tipoSimulacao === 'periodo') {
         resultadosItems = [
@@ -1132,13 +1010,12 @@ function generateSummaryHtml(dadosFinais, metricas, historico, inputs) {
                 icon: 'coins',
             },
             {
-                label: `Patrimônio Total Final${inflacaoInfo}`,
+                label: `Patrimônio Total Final${inflacaoInfo}${tooltipValorReal}`,
                 value: formatarMoeda(patrimonioTotalFinal),
                 icon: 'landmark',
-                smallText:
-                    annualInflationRate > 0
-                        ? `(Valor Real Hoje: ${formatarMoeda(patrimonioTotalFinalReal)})`
-                        : '',
+                smallText: inflacaoAtiva
+                    ? `(Valor Real Hoje: ${formatarMoeda(patrimonioTotalFinalReal)})`
+                    : '',
                 title: valorRealTitle,
             },
             {
@@ -1148,14 +1025,13 @@ function generateSummaryHtml(dadosFinais, metricas, historico, inputs) {
                 smallText: aporteCorrigidoInfo,
             },
             {
-                label: 'Dividendos Último Mês',
+                label: `Dividendos Último Mês${tooltipValorReal}`,
                 value: formatarMoeda(dividendosUltimoMes),
                 icon: 'hand-holding-usd',
                 valueClass: 'positive',
-                smallText:
-                    annualInflationRate > 0
-                        ? `(Valor Real Hoje: ${formatarMoeda(dividendosUltimoMesReal)})`
-                        : `(${pctDividendosSobrePatrimonioFinal.toFixed(1)}% do Patrim.)`,
+                smallText: inflacaoAtiva
+                    ? `(Valor Real Hoje: ${formatarMoeda(dividendosUltimoMesReal)})`
+                    : `(${pctDividendosSobrePatrimonioFinal.toFixed(1)}% do Patrim.)`,
                 title: valorRealTitle,
             },
             {
@@ -1168,22 +1044,24 @@ function generateSummaryHtml(dadosFinais, metricas, historico, inputs) {
         ]
         if (custoVidaMensal > 0) {
             const custoVidaLabel = `'Viver de Renda' (${formatarMoeda(custoVidaMensal)}/mês Hoje)`
+            const tooltipViverDeRenda = inflacaoAtiva
+                ? ' <i class="fas fa-question-circle tooltip-trigger" data-tooltip="Estimativa de quando os dividendos reais cobrirão o custo de vida real (ambos ajustados pela inflação)."></i>'
+                : ''
             if (mesParaViverDeRenda !== -1) {
                 const anosCompletosRenda = Math.floor((mesParaViverDeRenda - 1) / 12)
                 const custoVidaCorrigidoMes = arredondarParaMoeda(
                     custoVidaMensal * Math.pow(1 + annualInflationRate, anosCompletosRenda),
                 )
                 resultadosItems.push({
-                    label: custoVidaLabel,
+                    label: `${custoVidaLabel}${tooltipViverDeRenda}`,
                     value: `Atingido no Mês ${mesParaViverDeRenda}`,
                     icon: 'umbrella-beach',
                     valueClass: 'positive',
-                    smallText:
-                        annualInflationRate > 0
-                            ? `(Custo Vida Corrigido Mês ${mesParaViverDeRenda}: ~${formatarMoeda(
-                                  custoVidaCorrigidoMes,
-                              )})`
-                            : '',
+                    smallText: inflacaoAtiva
+                        ? `(Custo Vida Corrigido Mês ${mesParaViverDeRenda}: ~${formatarMoeda(
+                              custoVidaCorrigidoMes,
+                          )})`
+                        : '',
                 })
             } else {
                 const ultDividendoNominal =
@@ -1196,11 +1074,13 @@ function generateSummaryHtml(dadosFinais, metricas, historico, inputs) {
                 const custoVidaFinal = arredondarParaMoeda(custoVidaFinalCorrigido)
                 const gap = arredondarParaMoeda(custoVidaFinal - ultDividendoNominal)
                 const smallText =
-                    gap > 0 && ultDividendoNominal >= 0
-                        ? `(Faltam ${formatarMoeda(gap)}/mês para ${formatarMoeda(custoVidaFinal)})`
+                    gap > 0 && ultDividendoNominal >= 0 && inflacaoAtiva
+                        ? `(Faltam ${formatarMoeda(gap)}/mês em valor real para ${formatarMoeda(
+                              custoVidaFinal,
+                          )})`
                         : `(Dividendo final: ${formatarMoeda(ultDividendoNominal)})`
                 resultadosItems.push({
-                    label: custoVidaLabel,
+                    label: `${custoVidaLabel}${tooltipViverDeRenda}`,
                     value: `Não atingido em ${mesesSimulados} meses.`,
                     icon: 'times-circle',
                     valueClass: 'negative',
@@ -1215,15 +1095,19 @@ function generateSummaryHtml(dadosFinais, metricas, historico, inputs) {
         )
         const metaAtingida = arredondarParaMoeda(patrimonioTotalFinal) >= metaCorrigidaFinal
         const tempoAnos = (mesesSimulados / 12).toFixed(1)
+        const tooltipMeta = inflacaoAtiva
+            ? ' <i class="fas fa-question-circle tooltip-trigger" data-tooltip="A meta original é corrigida pela inflação estimada ao longo do tempo."></i>'
+            : ''
         resultadosItems = [
             {
-                label: `Meta de Patrimônio (Valor de Hoje)`,
+                label: `Meta de Patrimônio (Valor de Hoje)${tooltipMeta}`,
                 value: formatarMoeda(metaPatrimonioOriginal),
                 icon: 'bullseye',
-                smallText:
-                    annualInflationRate > 0
-                        ? `(Meta Corrigida: ${formatarMoeda(metaCorrigidaFinal)})`
-                        : '',
+                smallText: inflacaoAtiva
+                    ? `(Meta Corrigida no Mês ${mesesSimulados}: ${formatarMoeda(
+                          metaCorrigidaFinal,
+                      )})`
+                    : '',
             },
             {
                 label: 'Aporte Inicial',
@@ -1239,13 +1123,12 @@ function generateSummaryHtml(dadosFinais, metricas, historico, inputs) {
                 valueClass: metaAtingida ? 'positive' : 'neutral',
             },
             {
-                label: `Patrimônio Final Atingido${inflacaoInfo}`,
+                label: `Patrimônio Final Atingido${inflacaoInfo}${tooltipValorReal}`,
                 value: formatarMoeda(patrimonioTotalFinal),
                 icon: 'landmark',
-                smallText:
-                    annualInflationRate > 0
-                        ? `(Real Hoje: ${formatarMoeda(patrimonioTotalFinalReal)})`
-                        : '',
+                smallText: inflacaoAtiva
+                    ? `(Real Hoje: ${formatarMoeda(patrimonioTotalFinalReal)})`
+                    : '',
                 title: valorRealTitle,
             },
             {
@@ -1255,14 +1138,13 @@ function generateSummaryHtml(dadosFinais, metricas, historico, inputs) {
                 smallText: aporteCorrigidoInfo,
             },
             {
-                label: `Dividendos (Mês ${mesesSimulados})`,
+                label: `Dividendos (Mês ${mesesSimulados})${tooltipValorReal}`,
                 value: formatarMoeda(dividendosUltimoMes),
                 icon: 'hand-holding-usd',
                 valueClass: 'positive',
-                smallText:
-                    annualInflationRate > 0
-                        ? `(Real Hoje: ${formatarMoeda(dividendosUltimoMesReal)})`
-                        : '',
+                smallText: inflacaoAtiva
+                    ? `(Real Hoje: ${formatarMoeda(dividendosUltimoMesReal)})`
+                    : '',
                 title: valorRealTitle,
             },
         ]
@@ -1396,13 +1278,23 @@ function updateGraficoDividendos(labels, dadosDividendos) {
 }
 
 function popularTabelaDetalhada(historico, aporteInicial) {
-    const tblBody = document.getElementById('simulation-table')?.querySelector('tbody')
-    if (!tblBody) return false
-    tblBody.innerHTML = ''
+    const table = document.getElementById('simulation-table')
+    const tblBody = table?.querySelector('tbody')
+
+    if (!table || !tblBody) return false
 
     const { mesesLabels, patrimonioInvestidoHist, dividendosHist, ociosoHist, aporteMesHist } =
         historico
     const annualInflationRate = historicoGlobal?.dadosFinais?.annualInflationRate || 0
+    const numeroColunas = annualInflationRate > 0 ? 7 : 5
+
+    if (annualInflationRate > 0) {
+        table.classList.remove('no-inflation')
+    } else {
+        table.classList.add('no-inflation')
+    }
+
+    tblBody.innerHTML = ''
 
     const row0 = tblBody.insertRow()
     row0.insertCell().textContent = 0
@@ -1460,8 +1352,11 @@ function popularTabelaDetalhada(historico, aporteInicial) {
         }
         return true
     } else {
-        tblBody.innerHTML =
-            '<tr class="placeholder-row"><td colspan="7" style="text-align: center; padding: 1rem;">Nenhum mês simulado para detalhar (além do inicial).</td></tr>'
+        tblBody.innerHTML = `<tr class="placeholder-row"><td colspan="7" style="text-align: center; padding: 1rem;">Nenhum mês simulado para detalhar (além do inicial).</td></tr>`
+        const placeholderCell = tblBody.querySelector('.placeholder-row td')
+        if (placeholderCell) {
+            placeholderCell.colSpan = numeroColunas
+        }
         return false
     }
 }
@@ -1486,17 +1381,21 @@ function atualizarInterfaceUsuario(dadosFinais, historico, ativosProcessadosPrio
     }
     resDiv.innerHTML = ''
     resDiv.classList.remove('result-placeholder', 'card-body')
-    resDiv.classList.add('results-list-container')
+    resDiv.classList.add('results-list-container', 'card-body')
     resDiv.style.minHeight = 'auto'
     resDiv.style.display = 'block'
+
     const metricas = calculateMetricsSummary(dadosFinais, historico)
     const inputs = obterInputsSimulacao()
     resDiv.innerHTML = generateSummaryHtml(dadosFinais, metricas, historico, inputs)
 
+    const disclaimerEl = document.createElement('p')
+    disclaimerEl.className = 'resultado-disclaimer'
+    disclaimerEl.innerHTML =
+        '<small>Lembrete: Esta projeção considera que os preços dos ativos e os dividendos por cota permanecem constantes durante todo o período simulado. A rentabilidade real pode variar.</small>'
+    resDiv.appendChild(disclaimerEl)
+
     const labelsGraficos = historico.mesesLabels.map((m) => `Mês ${m}`)
-    const totalAportadoGrafico = historico.totalAportadoHist
-        .slice(1)
-        .map((v) => arredondarParaMoeda(v))
 
     if (typeof Chart !== 'undefined') {
         if (
@@ -1518,7 +1417,6 @@ function atualizarInterfaceUsuario(dadosFinais, historico, ativosProcessadosPrio
         }
     } else {
         console.error('Chart.js não está definido ao tentar atualizar a UI.')
-        return
     }
 
     updateGraficoEvolucao(
@@ -1543,32 +1441,34 @@ function atualizarListaAtivos() {
         ativosLS = []
     }
     const listEl = document.getElementById('ativos-list')
-    const priorityListEl = document.getElementById('priority-sort-list')
+    const priorityListEl = document.getElementById('priority-sort-list') // Mantido para limpeza, mas o elemento será removido do HTML
     const placeholder = listEl?.querySelector('.lista-vazia-placeholder')
     const totalAlocadoEl = document.getElementById('total-alocado')
     const feedbackEl = document.getElementById('alocacao-feedback')
 
-    if (!listEl || !totalAlocadoEl || !feedbackEl || !priorityListEl) {
-        console.error('Elementos da lista de ativos ou lista de prioridade não encontrados.')
+    if (!listEl || !totalAlocadoEl || !feedbackEl) {
+        // Removida checagem de priorityListEl como essencial
+        console.error('Elementos da lista de ativos ou feedback não encontrados.')
         return
     }
 
     listEl.querySelectorAll('.ativo-item').forEach((el) => el.remove())
-    priorityListEl.innerHTML = ''
+    if (priorityListEl) {
+        priorityListEl.innerHTML = ''
+    } // Limpa lista de prioridade se ainda existir no HTML
     let somaAlocacoes = 0
 
     if (ativosLS.length === 0) {
         if (placeholder) placeholder.style.display = 'flex'
-        priorityListEl.innerHTML =
-            '<li class="priority-placeholder">Adicione ativos para definir a prioridade.</li>'
+        if (priorityListEl) {
+            priorityListEl.innerHTML = '<li class="priority-placeholder">Adicione ativos.</li>'
+        } // Atualiza placeholder se existir
         if (gSortableInstance) {
-            gSortableInstance.option('disabled', true)
+            gSortableInstance.destroy()
+            gSortableInstance = null
         }
     } else {
         if (placeholder) placeholder.style.display = 'none'
-        const ativosOrdenadosPrioridade = [...ativosLS].sort(
-            (a, b) => (parseInt(a.prioridade, 10) || 999) - (parseInt(b.prioridade, 10) || 999),
-        )
 
         ativosLS.forEach((ativo, indexNoLS) => {
             const nome = ativo.nome || 'S/Nome'
@@ -1614,41 +1514,9 @@ function atualizarListaAtivos() {
             listEl.appendChild(el)
         })
 
-        ativosOrdenadosPrioridade.forEach((ativo) => {
-            const indexOriginal = ativosLS.findIndex(
-                (a) =>
-                    a.nome === ativo.nome &&
-                    a.preco === ativo.preco &&
-                    a.alocacao === ativo.alocacao,
-            )
-            if (indexOriginal === -1) return
-
-            const prioEl = document.createElement('li')
-            prioEl.className = 'priority-item'
-            prioEl.setAttribute('data-ls-index', indexOriginal)
-            prioEl.innerHTML = `
-                <i class="fas fa-grip-vertical drag-handle" title="Arrastar para reordenar"></i>
-                <span class="asset-name">${ativo.nome || 'S/Nome'}</span>
-            `
-            priorityListEl.appendChild(prioEl)
-        })
-
-        if (typeof Sortable !== 'undefined') {
-            if (gSortableInstance) {
-                gSortableInstance.destroy()
-            }
-            gSortableInstance = new Sortable(priorityListEl, {
-                animation: 150,
-                ghostClass: 'sortable-ghost',
-                dragClass: 'sortable-drag',
-                handle: '.drag-handle',
-                onEnd: handlePriorityReorder,
-                disabled: false,
-            })
-        } else {
-            console.error(
-                'SortableJS não carregado. Funcionalidade de arrastar prioridade desativada.',
-            )
+        if (gSortableInstance) {
+            gSortableInstance.destroy()
+            gSortableInstance = null
         }
     }
 
@@ -1670,48 +1538,7 @@ function atualizarListaAtivos() {
     }
 
     _atualizarEstadoBotaoSimular()
-
     clearTimeout(gTimeoutSimulacao)
-}
-
-function handlePriorityReorder(event) {
-    const items = event.to.children
-    const newOrderIndices = Array.from(items).map((item) =>
-        parseInt(item.getAttribute('data-ls-index'), 10),
-    )
-    try {
-        let ativos = JSON.parse(localStorage.getItem('ativos') || '[]')
-        if (!Array.isArray(ativos)) {
-            mostrarMensagemErro('Erro ao ler ativos para reordenar.')
-            return
-        }
-        const reorderedAtivos = newOrderIndices
-            .map((index) => {
-                if (index >= 0 && index < ativos.length) {
-                    return ativos[index]
-                }
-                return null
-            })
-            .filter((ativo) => ativo !== null)
-        if (reorderedAtivos.length !== ativos.length) {
-            console.error(
-                'Erro na reordenação: índices inválidos encontrados.',
-                newOrderIndices,
-                ativos,
-            )
-            mostrarMensagemErro('Erro ao processar a nova ordem dos ativos.')
-            return
-        }
-        reorderedAtivos.forEach((ativo, i) => {
-            ativo.prioridade = (i + 1).toString()
-        })
-        localStorage.setItem('ativos', JSON.stringify(reorderedAtivos))
-        mostrarMensagemSucesso('Ordem de prioridade salva!')
-        atualizarListaAtivos()
-    } catch (e) {
-        console.error('Erro ao reordenar ou salvar prioridade:', e)
-        mostrarMensagemErro('Erro ao salvar nova ordem de prioridade.')
-    }
 }
 
 function abrirModalEdicaoAtivo(index, event) {
@@ -2037,18 +1864,6 @@ function _atualizarEstadoBotaoSimular() {
     }
 }
 
-function _atualizarDestaquePrioridade() {
-    const estrategiaSelect = document.getElementById('estrategia-reinvestimento')
-    const priorityList = document.getElementById('priority-sort-list')
-    if (!estrategiaSelect || !priorityList) return
-
-    if (estrategiaSelect.value === 'prioridade') {
-        priorityList.classList.add('prioridade-ativa')
-    } else {
-        priorityList.classList.remove('prioridade-ativa')
-    }
-}
-
 function setupEventListeners() {
     const modal = document.getElementById('modal-ativo')
     const inputsSimulador = [
@@ -2059,7 +1874,6 @@ function setupEventListeners() {
         'meta-patrimonio',
         'custo-vida',
         'tipo-simulacao',
-        'estrategia-reinvestimento',
         'inflacao-anual',
         'corrigir-aporte-inflacao',
     ]
@@ -2075,9 +1889,6 @@ function setupEventListeners() {
                     : 'input'
             element.addEventListener(eventType, () => {
                 _atualizarEstadoBotaoSimular()
-                if (id === 'estrategia-reinvestimento') {
-                    _atualizarDestaquePrioridade()
-                }
             })
 
             if (element.type === 'text' && element.inputMode === 'numeric' && !imaskInstances[id]) {
@@ -2143,7 +1954,6 @@ function setupEventListeners() {
         if (e.key === 'Escape' && modal?.classList.contains('show')) modal.classList.remove('show')
     })
     document.getElementById('form-ativo')?.addEventListener('submit', salvarAtivo)
-
     document.getElementById('simular-btn')?.addEventListener('click', () => {
         const btn = document.getElementById('simular-btn')
         if (!gBloqueioRecursao && btn && !btn.disabled) {
@@ -2152,7 +1962,6 @@ function setupEventListeners() {
             calcularSimulacaoPrincipal()
         }
     })
-
     document.getElementById('export-csv-btn')?.addEventListener('click', () => {
         if (typeof exportTableToCSV === 'function') {
             exportTableToCSV('simulation-table')
@@ -2161,7 +1970,6 @@ function setupEventListeners() {
             console.error('Função exportTableToCSV não definida.')
         }
     })
-
     document.getElementById('salvar-cenario-btn')?.addEventListener('click', handleSalvarCenario)
     document
         .getElementById('carregar-cenario-btn')
@@ -2357,7 +2165,6 @@ function _aplicarDadosFormulario(dadosCenario) {
     setInputValue('aporte-mensal', dadosCenario.aporteMensal)
     setChecked('corrigir-aporte-inflacao', dadosCenario.corrigirAporteInflacao)
     setInputValue('inflacao-anual', dadosCenario.inflacaoAnual)
-    setSelectValue('estrategia-reinvestimento', dadosCenario.estrategiaReinvestimento)
     setInputValue('periodo-valor', dadosCenario.periodoValor)
     setSelectValue('periodo-tipo', dadosCenario.periodoTipo)
     setInputValue('meta-patrimonio', dadosCenario.metaPatrimonio)
@@ -2376,6 +2183,7 @@ function _aplicarDadosFormulario(dadosCenario) {
         tipoSimulacaoSelect.dispatchEvent(new Event('change'))
     }
     limparResultadosVisuais(true)
+    _atualizarEstadoBotaoSimular()
 }
 
 function handleSalvarCenario() {
@@ -2472,7 +2280,6 @@ function onDOMContentLoaded() {
             limparResultadosVisuais(true)
         }
         _atualizarEstadoBotaoSimular()
-        _atualizarDestaquePrioridade()
     } catch (error) {
         console.error('ERRO FATAL NA INICIALIZAÇÃO:', error)
         mostrarMensagemErro(`Erro grave na inicialização: ${error.message}.`)

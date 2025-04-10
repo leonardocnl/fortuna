@@ -222,31 +222,6 @@
                                 >
                             </div>
 
-                            <div class="input-group">
-                                <label for="estrategia-reinvestimento"
-                                    ><i class="fas fa-random"></i> Estratégia de Reinvestimento:
-                                    <i
-                                        class="fas fa-question-circle tooltip-trigger"
-                                        data-tooltip="'Rebalancear': Tenta manter as % definidas para os ativos. 'Seguir Prioridade': Reinveste seguindo a ordem definida na lista de prioridade abaixo."
-                                    ></i
-                                ></label>
-                                <select
-                                    id="estrategia-reinvestimento"
-                                    name="estrategia-reinvestimento"
-                                >
-                                    <option value="rebalancear" selected>
-                                        Rebalancear Carteira (Padrão)
-                                    </option>
-                                    <option value="prioridade">
-                                        Seguir Prioridade Definida (Ordem Abaixo)
-                                    </option>
-                                </select>
-                                <small class="input-help"
-                                    >Como o dinheiro extra (sobras, dividendos) será
-                                    reinvestido.</small
-                                >
-                            </div>
-
                             <div
                                 class="input-group"
                                 id="meta-patrimonio-container"
@@ -370,60 +345,6 @@
                             >
                                 <i class="fas fa-plus"></i> Adicionar/Modificar Ativo
                             </button>
-
-                            <div
-                                id="priority-reorder-section"
-                                style="
-                                    margin-top: 2rem;
-                                    padding-top: 1.5rem;
-                                    border-top: 1px solid #eee;
-                                "
-                            >
-                                <h4>
-                                    <i class="fas fa-sort"></i> Prioridade de Reinvestimento
-                                    (Arraste para Ordenar)
-                                </h4>
-                                <p
-                                    class="section-description"
-                                    style="font-size: 0.85rem; margin-bottom: 0.8rem"
-                                >
-                                    Defina a ordem em que o dinheiro extra (dividendos, sobras) será
-                                    reinvestido na estratégia 'Seguir Prioridade'. O primeiro da
-                                    lista tem prioridade 1.
-                                    <i
-                                        class="fas fa-question-circle tooltip-trigger"
-                                        data-tooltip="Esta ordem só é utilizada se a estratégia 'Seguir Prioridade Definida' estiver selecionada acima. Arraste os ativos para mudar a ordem."
-                                    ></i>
-                                </p>
-                                <ul
-                                    id="priority-sort-list"
-                                    class="priority-list"
-                                    style="
-                                        list-style: none;
-                                        padding: 0;
-                                        border: 1px dashed #ccc;
-                                        border-radius: 4px;
-                                        min-height: 50px;
-                                        background-color: #fafafa;
-                                    "
-                                >
-                                    <li
-                                        class="priority-placeholder"
-                                        style="
-                                            text-align: center;
-                                            color: #888;
-                                            padding: 1rem;
-                                            font-style: italic;
-                                        "
-                                    >
-                                        Adicione ativos para definir a prioridade.
-                                    </li>
-                                </ul>
-                                <small class="input-help" style="margin-top: 0.5rem"
-                                    >Clique e arraste os ativos acima para reordenar a
-                                    prioridade.</small
-                                >
-                            </div>
                         </div>
 
                         <div
@@ -541,7 +462,11 @@
                                 class="fas fa-info-circle fa-2x"
                                 style="color: #aaa; margin-bottom: 1rem; display: block"
                             ></i>
-                            <p>Preencha os dados, adicione ativos e clique em "Simular".</p>
+                            <p>
+                                Bem-vindo(a)! Preencha os dados da simulação acima, adicione seus
+                                ativos (somando 100% de alocação) e clique em "Simular Resultados"
+                                para ver as projeções aqui.
+                            </p>
                         </div>
                     </div>
                 </section>
@@ -615,7 +540,8 @@
                                 <tbody>
                                     <tr class="placeholder-row">
                                         <td colspan="7" style="text-align: center; padding: 1rem">
-                                            Os detalhes aparecerão aqui.
+                                            Os detalhes mês a mês da sua simulação aparecerão aqui
+                                            após o cálculo.
                                         </td>
                                     </tr>
                                 </tbody>
@@ -728,8 +654,14 @@
                                     required
                                 />
                                 <small class="input-help">
-                                    <span style="display: block; margin-bottom: 3px;">(Total alocado nos outros ativos: <span id="alocacao-outros-ativos" style="font-weight: bold;">0.00%</span>)</span>
-                                    Quanto do aporte mensal vai para este ativo. Total deve ser 100%.
+                                    <span style="display: block; margin-bottom: 3px"
+                                        >(Total alocado nos outros ativos:
+                                        <span id="alocacao-outros-ativos" style="font-weight: bold"
+                                            >0.00%</span
+                                        >)</span
+                                    >
+                                    Quanto do aporte mensal vai para este ativo. Total deve ser
+                                    100%.
                                 </small>
                             </div>
                         </fieldset>

@@ -583,6 +583,17 @@ body {
     padding: 1.75rem;
     text-align: left;
 }
+
+.resultado-disclaimer {
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px dashed var(--color-border-light);
+    text-align: center;
+    line-height: 1.5;
+}
+
 .result-list-item {
     display: flex;
     flex-wrap: wrap;
@@ -709,6 +720,13 @@ body {
 }
 .table-container::-webkit-scrollbar-thumb:hover {
     background: #aaa;
+}
+
+table.no-inflation th:nth-child(4),
+table.no-inflation td:nth-child(4),
+table.no-inflation th:nth-child(7),
+table.no-inflation td:nth-child(7) {
+    display: none;
 }
 
 .data-table {
