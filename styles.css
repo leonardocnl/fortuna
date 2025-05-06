@@ -69,16 +69,6 @@ body {
     padding-right: var(--container-padding-x);
 }
 
-.layout-container {
-    display: grid;
-    grid-template-columns: 1fr var(--sidebar-width);
-    gap: var(--layout-gap);
-    align-items: flex-start;
-    flex-grow: 1;
-    padding-top: 2rem;
-    padding-bottom: 3rem;
-}
-
 .main-content {
     display: flex;
     flex-direction: column;
@@ -94,7 +84,7 @@ body {
 }
 
 .site-header {
-    padding: 2rem 0;
+    padding: 2px 0;
     background: var(--color-secondary);
     color: var(--color-background);
     text-align: center;
@@ -119,6 +109,18 @@ body {
     color: rgba(255, 255, 255, 0.8);
     font-size: 1.1rem;
     font-weight: 400;
+}
+
+.header-content{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0;
+}
+
+.header-content h1{
+    margin: 0;
+    padding: 0;
 }
 
 .card {
@@ -862,7 +864,7 @@ table.no-inflation td:nth-child(7) {
 .fechar-modal:hover {
     color: var(--color-danger);
     opacity: 1;
-    transform: scale(1.1);
+    transform: scale(1.0);
 }
 
 .modal .card-body {
@@ -878,6 +880,22 @@ table.no-inflation td:nth-child(7) {
     padding-top: 1rem;
     border-top: 1px solid var(--color-border);
     margin-top: 1.5rem;
+}
+
+.modal-actions .btn{
+    padding: 6px 12px;
+    font-size: 0.9rem;
+    width: auto;
+    height: auto;
+    margin: 0;
+}
+
+.modal-actions .btn.btn-secondary{
+    padding: 4px 8px;
+    font-size: 0.9rem;
+    width: auto;
+    height: auto;
+    margin: 0;
 }
 
 #message-container {
@@ -968,6 +986,10 @@ table.no-inflation td:nth-child(7) {
 .footer-link:hover {
     color: var(--color-surface);
     text-decoration: underline;
+}
+
+.footer-links .footer-link i{
+    margin-right: 5px;
 }
 
 .sidebar-ads .ad-placeholder {
@@ -1141,7 +1163,7 @@ table.no-inflation td:nth-child(7) {
     border: 1px solid var(--color-border);
     border-radius: var(--border-radius);
     background-color: var(--color-surface);
-    min-height: 60px;
+    min-height: 30px; /* aqui */
     box-shadow: var(--shadow-sm);
 }
 .priority-list .priority-placeholder {
@@ -1266,7 +1288,7 @@ table.no-inflation td:nth-child(7) {
         padding-right: 1rem;
     }
     .site-header {
-        padding: 1.5rem 0;
+        padding: 5px 0;
     }
     .site-header h1 {
         font-size: 2rem;
